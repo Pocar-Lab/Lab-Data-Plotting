@@ -68,16 +68,26 @@ def get_fit_parameters(x, y, x_err, y_err):
     p_err = out.sd_beta
     # p_matrix = out.cov_beta
     y_fit = line_func(p_opt, x)
-    return p_opt, p_err, # Returns a two-dimensional array where the first row is p_opt, and the second row is p_err
+    return p_opt, p_err # Returns a two-dimensional array where the first row is p_opt, and the second row is p_err
 
 # Calculate the reduced chi-squared value:
-def calc_reduced_chisquare(opt_parameters, x_vals, y_vals, y_errors):
+def calc_reduced_chisquare_1d(opt_parameters, x_vals, y_vals, y_errors):
     y_expected = line_func(opt_parameters, np.array(x_vals))
     len_y_data = len(y_vals)
     num_parameters = 2
     chisquare = np.sum(((y_expected-y_vals)/y_errors)**2)
-    reduced_chisquare = chisquare/(len_y_data-num_parameters)
-    return reduced_chisquare
+    reduced_chisquare_1d = chisquare/(len_y_data-num_parameters)
+    return reduced_chisquare_1d
+
+def calc_reduced_chisquare_2d(opt_parameters, x_vals, y_vals, x_errors, y_errors):
+    y_expected = line_func(opt_parameters, np.array(x_vals))
+    len_y_data = len(y_vals)
+    num_parameters = 2
+    a = opt_parameters[0]
+    b = opt_parameters[1]
+    chisquare = np.sum((y_vals-a*x_vals-b)**2/((a**2)*(x_errors**2)+(y_errors**2)))
+    reduced_chisquare_2d = chisquare/(len_y_data-num_parameters)
+    return reduced_chisquare_2d
 
 # Plot the raw data points and the error bars, and finding and plotting the best fit line. 
 # Returns the optimized parameters for the best fit line, and the reduced chisquared value.
@@ -85,19 +95,24 @@ def plot_data(df, color, ecolor, label):
     x_range = np.array(range(166, 173))
 
     x = df[['temperature_avg']].values[:, 0]
+    x_adjusted = x-169
+    x_range_adjusted = x_range-169
+    
     y = df[['midpoint']].values[:, 0]
     x_error = df[['temperature_rms']].values[:, 0]
     y_error = df[['midpt_error']].values[:, 0]
 
-    ax_data.scatter(x, y, c=color)
+    # ax_data.scatter(x, y, c=color)
     ax_data.errorbar(x, y, y_error, x_error, ls='none', color=ecolor, barsabove=True, zorder=3)
 
     optimized_parameters = get_fit_parameters(x, y, x_error, y_error)
     best_fit_line = line_func(optimized_parameters[0], x_range)
-    ax_data.plot(x_range, best_fit_line, c=color, label=label)
+    ax_data.plot(x_range, best_fit_line, c=color, label=label, linewidth=0.8)
 
-    reduced_chisquare = calc_reduced_chisquare(optimized_parameters[0], x, y, y_error)
-    return optimized_parameters, reduced_chisquare
+    reduced_chisquare_1d = calc_reduced_chisquare_1d(optimized_parameters[0], x, y, y_error)
+    reduced_chisquare_2d = calc_reduced_chisquare_2d(optimized_parameters[0], x, y, x_error, y_error)
+    
+    return optimized_parameters, reduced_chisquare_1d, reduced_chisquare_2d
 
 #==================================================================================================
 
@@ -133,10 +148,9 @@ df_27mm = get_final_df(df_dates, '27', bias_voltage)
 df_38mm = get_final_df(df_dates, '38', bias_voltage)
 
 # Plot the data - the plot data function is called and set as variables for optimized parameters and reduced chisquared values for the data.
-optimized_parameters_27mm, reduced_chisquare_27mm = plot_data(df_27mm, color_27mm, ecolor_27mm, '27mm')
-optimized_parameters_38mm, reduced_chisquare_38mm = plot_data(df_38mm, color_38mm, ecolor_38mm, '38mm')
+optimized_parameters_27mm, reduced_chisquare_1d_27mm, reduced_chisquare_2d_27mm = plot_data(df_27mm, color_27mm, ecolor_27mm, '27mm')
+optimized_parameters_38mm, reduced_chisquare_1d_38mm, reduced_chisquare_2d_38mm = plot_data(df_38mm, color_38mm, ecolor_38mm, '38mm')
 
-print(optimized_parameters_27mm)
 #==================================================================================================
 
 #==================================================================================================
@@ -155,7 +169,7 @@ temperature_values = np.array([166, 167, 168, 169, 170, 171, 172])
 best_fit_line_27mm = line_func(optimized_parameters_27mm[0], temperature_values)
 best_fit_line_38mm = line_func(optimized_parameters_38mm[0], temperature_values)
 ratio_line = best_fit_line_38mm/best_fit_line_27mm
-ax_ratio.plot(temperature_values, ratio_line, c=ratio_color, label='ratio')
+ax_ratio.plot(temperature_values, ratio_line, c=ratio_color, label='ratio', linewidth=0.75)
 
 # Find and append expected values to different lists based on separation. The loop calculates the expected midpoint value based on the integer temperature value.
 expected_voltages_27mm = []
@@ -189,7 +203,8 @@ print(ratio_errors)
 
 # Find and plot the ratio points (optional - mainly used for testing purposes)
 ratio_points = np.divide(expected_voltages_38mm, expected_voltages_27mm)
-ax_ratio.scatter(temperature_values, ratio_points, c=ratio_color)
+
+# ax_ratio.scatter(temperature_values, ratio_points, c=ratio_color)
 ax_ratio.errorbar(temperature_values, ratio_points, ratio_errors, ls='none', color=ratio_ecolor, barsabove=True, zorder=3)
 
 #==================================================================================================
@@ -216,11 +231,13 @@ plt.title('27mm: {}   38mm: {}'.format(date_27mm, date_38mm))
 # Creating Text boxes - list the slope, intercept, and errors for each separation
 txtstr_27mm = '\n'.join(['slope = {:.4f} +/- {:.4f}'.format(optimized_parameters_27mm[0][0], optimized_parameters_27mm[1][0]),
                         'intercept = {:.4f} +/- {:.4f}'.format(optimized_parameters_27mm[0][1], optimized_parameters_27mm[1][1]),
-                        fr'$\chi^2$ = {reduced_chisquare_27mm:.6f}'])
+                        r'$\chi^2_{1D}$' + f' = {reduced_chisquare_1d_27mm:.6f}',
+                        r'$\chi^2_{2D}$' + f' = {reduced_chisquare_2d_27mm:.6f}'])
 
 txtstr_38mm = '\n'.join(['slope = {:.4f} +/- {:.4f}'.format(optimized_parameters_38mm[0][0], optimized_parameters_38mm[1][0]),
                         'intercept = {:.4f} +/- {:.4f}'.format(optimized_parameters_38mm[0][1], optimized_parameters_38mm[1][1]),
-                        fr'$\chi^2$ = {reduced_chisquare_38mm:.6f}'])
+                        r'$\chi^2_{1D}$' + f' = {reduced_chisquare_1d_38mm:.6f}',
+                        r'$\chi^2_{2D}$' + f' = {reduced_chisquare_2d_38mm:.6f}'])
 
 # Setting the position of the text on the figure
 ax_data.set_position((0.1, 0.1, 0.6, 0.8))
