@@ -95,25 +95,19 @@ def plot_data(df, color, ecolor, label):
     x_range = np.array(range(166, 173))
 
     x = df[['temperature_avg']].values[:, 0]
-    x_adjusted = x-169
-    x_range_adjusted = x_range-169
-
-    print(x_adjusted)
-    print(x_range_adjusted)
-
     y = df[['midpoint']].values[:, 0]
     x_error = df[['temperature_rms']].values[:, 0]
     y_error = df[['midpt_error']].values[:, 0]
 
     # ax_data.scatter(x, y, c=color)
-    ax_data.errorbar(x_adjusted, y, y_error, x_error, ls='none', color=ecolor, barsabove=True, zorder=3)
+    ax_data.errorbar(x, y, y_error, x_error, ls='none', color=ecolor, barsabove=True, zorder=3)
 
-    optimized_parameters = get_fit_parameters(x_adjusted, y, x_error, y_error)
-    best_fit_line = line_func(optimized_parameters[0], x_range_adjusted)
-    ax_data.plot(x_range_adjusted, best_fit_line, c=color, label=label, linewidth=0.8)
+    optimized_parameters = get_fit_parameters(x, y, x_error, y_error)
+    best_fit_line = line_func(optimized_parameters[0], x_range)
+    ax_data.plot(x_range, best_fit_line, c=color, label=label, linewidth=0.8)
 
-    reduced_chisquare_1d = calc_reduced_chisquare_1d(optimized_parameters[0], x_adjusted, y, y_error)
-    reduced_chisquare_2d = calc_reduced_chisquare_2d(optimized_parameters[0], x_adjusted, y, x_error, y_error)
+    reduced_chisquare_1d = calc_reduced_chisquare_1d(optimized_parameters[0], x, y, y_error)
+    reduced_chisquare_2d = calc_reduced_chisquare_2d(optimized_parameters[0], x, y, x_error, y_error)
     
     return optimized_parameters, reduced_chisquare_1d, reduced_chisquare_2d
 
@@ -161,7 +155,6 @@ optimized_parameters_38mm, reduced_chisquare_1d_38mm, reduced_chisquare_2d_38mm 
 
 # List of integer temperature values
 temperature_values = np.array([166, 167, 168, 169, 170, 171, 172])
-temperature_values_adjusted = temperature_values-169
 
 # Variables representing the slope, intercept, and errors on the slope and intercept for both separations
 (slope_27mm, intercept_27mm), (slope_error_27mm, intercept_error_27mm) = optimized_parameters_27mm
@@ -170,16 +163,16 @@ temperature_values_adjusted = temperature_values-169
 (slope_38mm, intercept_38mm), (slope_error_38mm, intercept_error_38mm) = optimized_parameters_38mm
 
 # Find the ratio line
-best_fit_line_27mm = line_func(optimized_parameters_27mm[0], temperature_values_adjusted)
-best_fit_line_38mm = line_func(optimized_parameters_38mm[0], temperature_values_adjusted)
+best_fit_line_27mm = line_func(optimized_parameters_27mm[0], temperature_values)
+best_fit_line_38mm = line_func(optimized_parameters_38mm[0], temperature_values)
 ratio_line = best_fit_line_38mm/best_fit_line_27mm
-ax_ratio.plot(temperature_values_adjusted, ratio_line, c=ratio_color, label='ratio', linewidth=0.75)
+ax_ratio.plot(temperature_values, ratio_line, c=ratio_color, label='ratio', linewidth=0.75)
 
 # Find and append expected values to different lists based on separation. The loop calculates the expected midpoint value based on the integer temperature value.
 expected_voltages_27mm = []
 expected_voltages_38mm = []
 ratio_errors = []
-for temperature in temperature_values_adjusted:
+for temperature in temperature_values:
     # Expected values at 27mm
     expected_voltage_27mm = slope_27mm*temperature + intercept_27mm
     expected_voltages_27mm.append(expected_voltage_27mm)
@@ -209,7 +202,7 @@ print(ratio_errors)
 ratio_points = np.divide(expected_voltages_38mm, expected_voltages_27mm)
 
 # ax_ratio.scatter(temperature_values, ratio_points, c=ratio_color)
-ax_ratio.errorbar(temperature_values_adjusted, ratio_points, ratio_errors, ls='none', color=ratio_ecolor, barsabove=True, zorder=3)
+ax_ratio.errorbar(temperature_values, ratio_points, ratio_errors, ls='none', color=ratio_ecolor, barsabove=True, zorder=3)
 
 #==================================================================================================
 
