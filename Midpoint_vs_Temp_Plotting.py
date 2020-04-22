@@ -105,22 +105,15 @@ def plot_data(df, color, ecolor, label):
     y_error = df[['midpt_error']].values[:, 0]
 
     # ax_data.scatter(x, y, c=color)
-    # ax_data.errorbar(x, y, y_error, x_error, ls='none', color=ecolor, barsabove=True, zorder=3)
     ax_data.errorbar(x_adjusted, y, y_error, x_error, ls='none', color=ecolor, barsabove=True, zorder=3)
 
-    # optimized_parameters = get_fit_parameters(x, y, x_error, y_error)
     optimized_parameters = get_fit_parameters(x_adjusted, y, x_error, y_error)
     print(optimized_parameters)
     
-    # best_fit_line = line_func(optimized_parameters[0], x_range)
     best_fit_line = line_func(optimized_parameters[0], x_range_adjusted)
     
-    # ax_data.plot(x_range, best_fit_line, c=color, label=label, linewidth=0.8)
     ax_data.plot(x_range_adjusted, best_fit_line, c=color, label=label, linewidth=0.8)
 
-
-    # reduced_chisquare_1d = calc_reduced_chisquare_1d(optimized_parameters[0], x, y, y_error)
-    # reduced_chisquare_2d = calc_reduced_chisquare_2d(optimized_parameters[0], x, y, x_error, y_error)
     reduced_chisquare_1d = calc_reduced_chisquare_1d(optimized_parameters[0], x_adjusted, y, y_error)
     reduced_chisquare_2d = calc_reduced_chisquare_2d(optimized_parameters[0], x_adjusted, y, x_error, y_error)
     
@@ -179,13 +172,10 @@ temperature_values_adjusted = temperature_values-169
 (slope_38mm, intercept_38mm), (slope_error_38mm, intercept_error_38mm) = optimized_parameters_38mm
 
 # Find the ratio line
-# best_fit_line_27mm = line_func(optimized_parameters_27mm[0], temperature_values)
-# best_fit_line_38mm = line_func(optimized_parameters_38mm[0], temperature_values)
 best_fit_line_27mm = line_func(optimized_parameters_27mm[0], temperature_values_adjusted)
 best_fit_line_38mm = line_func(optimized_parameters_38mm[0], temperature_values_adjusted)
 
 ratio_line = best_fit_line_38mm/best_fit_line_27mm
-# ax_ratio.plot(temperature_values, ratio_line, c=ratio_color, label='ratio', linewidth=0.75)
 ax_ratio.plot(temperature_values_adjusted, ratio_line, c=ratio_color, label='ratio', linewidth=0.75)
 
 # Find and append expected values to different lists based on separation. The loop calculates the expected midpoint value based on the integer temperature value.
@@ -221,8 +211,7 @@ for temperature in temperature_values_adjusted:
 # Find and plot the ratio points (optional - mainly used for testing purposes)
 ratio_points = np.divide(expected_voltages_38mm, expected_voltages_27mm)
 
-# ax_ratio.scatter(temperature_values, ratio_points, c=ratio_color)
-# ax_ratio.errorbar(temperature_values, ratio_points, ratio_errors, ls='none', color=ratio_ecolor, barsabove=True, zorder=3)
+# ax_ratio.scatter(temperature_values_adjusted, ratio_points, c=ratio_color)
 ax_ratio.errorbar(temperature_values_adjusted, ratio_points, ratio_errors, ls='none', color=ratio_ecolor, barsabove=True, zorder=3)
 
 #==================================================================================================
@@ -234,7 +223,6 @@ ax_ratio.errorbar(temperature_values_adjusted, ratio_points, ratio_errors, ls='n
 ax_ratio.set_ylim(0.0, 0.9)
 
 # Setting the axis labels
-# ax_data.set_xlabel('Temperature [K]', fontsize=14)
 ax_data.set_xlabel('Temperature [K] - 169K', fontsize=14)
 ax_data.set_ylabel('Midpoint [V]', fontsize=14)
 ax_ratio.set_ylabel('Ratio', fontsize=14)
