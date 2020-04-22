@@ -66,11 +66,12 @@ def get_fit_parameters(x, y, x_err, y_err):
     out = odr_object.run()
     p_opt = out.beta
     p_err = out.sd_beta
-    # p_matrix = out.cov_beta
+    p_matrix = out.cov_beta
     y_fit = line_func(p_opt, x)
+    print(p_matrix)
     return p_opt, p_err # Returns a two-dimensional array where the first row is p_opt, and the second row is p_err
 
-# Calculate the reduced chi-squared value:
+# Calculate the reduced chi-squared value in one dimension (uses y-errors only):
 def calc_reduced_chisquare_1d(opt_parameters, x_vals, y_vals, y_errors):
     y_expected = line_func(opt_parameters, np.array(x_vals))
     len_y_data = len(y_vals)
@@ -79,6 +80,7 @@ def calc_reduced_chisquare_1d(opt_parameters, x_vals, y_vals, y_errors):
     reduced_chisquare_1d = chisquare/(len_y_data-num_parameters)
     return reduced_chisquare_1d
 
+# Calculate the reduced chisquared value in two dimensions (uses both x and y errors):
 def calc_reduced_chisquare_2d(opt_parameters, x_vals, y_vals, x_errors, y_errors):
     y_expected = line_func(opt_parameters, np.array(x_vals))
     len_y_data = len(y_vals)
@@ -98,20 +100,27 @@ def plot_data(df, color, ecolor, label):
     x_adjusted = x-169
     x_range_adjusted = x_range-169
 
-    print(x_adjusted)
-    print(x_range_adjusted)
-
     y = df[['midpoint']].values[:, 0]
     x_error = df[['temperature_rms']].values[:, 0]
     y_error = df[['midpt_error']].values[:, 0]
 
     # ax_data.scatter(x, y, c=color)
+    # ax_data.errorbar(x, y, y_error, x_error, ls='none', color=ecolor, barsabove=True, zorder=3)
     ax_data.errorbar(x_adjusted, y, y_error, x_error, ls='none', color=ecolor, barsabove=True, zorder=3)
 
+    # optimized_parameters = get_fit_parameters(x, y, x_error, y_error)
     optimized_parameters = get_fit_parameters(x_adjusted, y, x_error, y_error)
+    print(optimized_parameters)
+    
+    # best_fit_line = line_func(optimized_parameters[0], x_range)
     best_fit_line = line_func(optimized_parameters[0], x_range_adjusted)
+    
+    # ax_data.plot(x_range, best_fit_line, c=color, label=label, linewidth=0.8)
     ax_data.plot(x_range_adjusted, best_fit_line, c=color, label=label, linewidth=0.8)
 
+
+    # reduced_chisquare_1d = calc_reduced_chisquare_1d(optimized_parameters[0], x, y, y_error)
+    # reduced_chisquare_2d = calc_reduced_chisquare_2d(optimized_parameters[0], x, y, x_error, y_error)
     reduced_chisquare_1d = calc_reduced_chisquare_1d(optimized_parameters[0], x_adjusted, y, y_error)
     reduced_chisquare_2d = calc_reduced_chisquare_2d(optimized_parameters[0], x_adjusted, y, x_error, y_error)
     
@@ -170,9 +179,13 @@ temperature_values_adjusted = temperature_values-169
 (slope_38mm, intercept_38mm), (slope_error_38mm, intercept_error_38mm) = optimized_parameters_38mm
 
 # Find the ratio line
+# best_fit_line_27mm = line_func(optimized_parameters_27mm[0], temperature_values)
+# best_fit_line_38mm = line_func(optimized_parameters_38mm[0], temperature_values)
 best_fit_line_27mm = line_func(optimized_parameters_27mm[0], temperature_values_adjusted)
 best_fit_line_38mm = line_func(optimized_parameters_38mm[0], temperature_values_adjusted)
+
 ratio_line = best_fit_line_38mm/best_fit_line_27mm
+# ax_ratio.plot(temperature_values, ratio_line, c=ratio_color, label='ratio', linewidth=0.75)
 ax_ratio.plot(temperature_values_adjusted, ratio_line, c=ratio_color, label='ratio', linewidth=0.75)
 
 # Find and append expected values to different lists based on separation. The loop calculates the expected midpoint value based on the integer temperature value.
@@ -203,12 +216,13 @@ for temperature in temperature_values_adjusted:
 
     ratio_errors.append(ratio_error)
 
-print(ratio_errors)
+# print(ratio_errors)
 
 # Find and plot the ratio points (optional - mainly used for testing purposes)
 ratio_points = np.divide(expected_voltages_38mm, expected_voltages_27mm)
 
 # ax_ratio.scatter(temperature_values, ratio_points, c=ratio_color)
+# ax_ratio.errorbar(temperature_values, ratio_points, ratio_errors, ls='none', color=ratio_ecolor, barsabove=True, zorder=3)
 ax_ratio.errorbar(temperature_values_adjusted, ratio_points, ratio_errors, ls='none', color=ratio_ecolor, barsabove=True, zorder=3)
 
 #==================================================================================================
@@ -220,7 +234,8 @@ ax_ratio.errorbar(temperature_values_adjusted, ratio_points, ratio_errors, ls='n
 ax_ratio.set_ylim(0.0, 0.9)
 
 # Setting the axis labels
-ax_data.set_xlabel('Temperature [K]', fontsize=14)
+# ax_data.set_xlabel('Temperature [K]', fontsize=14)
+ax_data.set_xlabel('Temperature [K] - 169K', fontsize=14)
 ax_data.set_ylabel('Midpoint [V]', fontsize=14)
 ax_ratio.set_ylabel('Ratio', fontsize=14)
 
