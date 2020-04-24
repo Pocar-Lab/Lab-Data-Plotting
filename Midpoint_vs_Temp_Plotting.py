@@ -197,10 +197,13 @@ for temperature in temperature_values_adjusted:
     
     T = temperature
 
+    rho_27mm = 0.5049
+    rho_38mm = 0.3309
+
     x = a*T + b
     y = c*T + d
-    dx = sqrt(T**2 * da**2 + db**2)
-    dy = sqrt(T**2 * dc**2 + dd**2)
+    dx = sqrt(T**2 * da**2 + db**2 + 2*rho_38mm*da*T*db)
+    dy = sqrt(T**2 * dc**2 + dd**2 + 2*rho_27mm*dc*T*dd)
     
     ratio_error = abs(x/y) * sqrt( (dx / x)**2 + (dy / y)**2 )
 
@@ -219,11 +222,11 @@ ax_ratio.errorbar(temperature_values_adjusted, ratio_points, ratio_errors, ls='n
 #==================================================================================================
 ### Plot Settings
 # Setting the y range for both axes
-# ax_data.set_ylim(0.0, 0.9)
-ax_ratio.set_ylim(0.0, 0.9)
+ax_data.set_ylim(0.675, 0.8)
+ax_ratio.set_ylim(0, 1.0)
 
 # Setting the axis labels
-ax_data.set_xlabel('Temperature [K] - 169K', fontsize=14)
+ax_data.set_xlabel('Temperature [K]', fontsize=14)
 ax_data.set_ylabel('Midpoint [V]', fontsize=14)
 ax_ratio.set_ylabel('Ratio', fontsize=14)
 
@@ -236,21 +239,30 @@ date_38mm = ", ".join(df_38mm.date.unique())
 plt.title('27mm: {}   38mm: {}'.format(date_27mm, date_38mm))
 
 # Creating Text boxes - list the slope, intercept, and errors for each separation
-txtstr_27mm = '\n'.join(['slope = {:.4f} +/- {:.4f}'.format(optimized_parameters_27mm[0][0], optimized_parameters_27mm[1][0]),
-                        'intercept = {:.4f} +/- {:.4f}'.format(optimized_parameters_27mm[0][1], optimized_parameters_27mm[1][1]),
+txtstr_27mm = '\n'.join(['Best fit function:', 
+                        'V = c*(T-169) + d',
+                        'slope c = {:.4f} +/- {:.4f}'.format(optimized_parameters_27mm[0][0], optimized_parameters_27mm[1][0]),
+                        'intercept d = {:.4f} +/- {:.4f}'.format(optimized_parameters_27mm[0][1], optimized_parameters_27mm[1][1]),
                         r'$\chi^2_{1D}$' + f' = {reduced_chisquare_1d_27mm:.6f}',
                         r'$\chi^2_{2D}$' + f' = {reduced_chisquare_2d_27mm:.6f}'])
 
-txtstr_38mm = '\n'.join(['slope = {:.4f} +/- {:.4f}'.format(optimized_parameters_38mm[0][0], optimized_parameters_38mm[1][0]),
-                        'intercept = {:.4f} +/- {:.4f}'.format(optimized_parameters_38mm[0][1], optimized_parameters_38mm[1][1]),
+txtstr_38mm = '\n'.join(['Best fit function:',
+                        'V = a*(T-169) + b',
+                        'slope a = {:.4f} +/- {:.4f}'.format(optimized_parameters_38mm[0][0], optimized_parameters_38mm[1][0]),
+                        'intercept b = {:.4f} +/- {:.4f}'.format(optimized_parameters_38mm[0][1], optimized_parameters_38mm[1][1]),
                         r'$\chi^2_{1D}$' + f' = {reduced_chisquare_1d_38mm:.6f}',
                         r'$\chi^2_{2D}$' + f' = {reduced_chisquare_2d_38mm:.6f}'])
 
 # Setting the position of the text on the figure
 ax_data.set_position((0.1, 0.1, 0.6, 0.8))
 ax_ratio.set_position((0.1, 0.1, 0.6, 0.8))
-plt.figtext(0.8, 0.6, txtstr_27mm, color=txt_color_27mm, fontsize=10)
-plt.figtext(0.8, 0.4, txtstr_38mm, color=txt_color_38mm, fontsize=10)
+plt.figtext(0.78, 0.5, txtstr_27mm, color=txt_color_27mm, fontsize=10)
+plt.figtext(0.78, 0.25, txtstr_38mm, color=txt_color_38mm, fontsize=10)
+
+for ax in [ax_data, ax_ratio]:
+    locs = ax.get_xticks()
+    adjusted_locs = [str(int(l+169)) for l in locs]
+    ax.set_xticklabels(adjusted_locs)
 
 plt.grid(False)
 ax_data.legend(bbox_to_anchor=(1.4, 1.0))
