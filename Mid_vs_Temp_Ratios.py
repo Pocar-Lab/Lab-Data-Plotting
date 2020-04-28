@@ -77,6 +77,9 @@ def analyze_data(df):
     x_range = np.array(range(166, 173))
 
     x = df[['temperature_avg']].values[:, 0]
+    x_adjusted = x-169
+    x_range_adjusted = x_range-169
+    
     y = df[['midpoint']].values[:, 0]
     x_error = df[['temperature_rms']].values[:, 0]
     y_error = df[['midpt_error']].values[:, 0]

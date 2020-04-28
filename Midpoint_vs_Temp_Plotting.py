@@ -64,12 +64,12 @@ def get_fit_parameters(x, y, x_err, y_err):
     data = odr.RealData(x, y, sx=x_err, sy=y_err)
     odr_object = odr.ODR(data, model_func, beta0=[40, 0.05], taufac=1E-5, sstol=1E-5, partol=1E-5, maxit=10000000)
     out = odr_object.run()
-    p_opt = out.beta
-    p_err = out.sd_beta
-    p_matrix = out.cov_beta
-    y_fit = line_func(p_opt, x)
-    print(p_matrix)
-    return p_opt, p_err # Returns a two-dimensional array where the first row is p_opt, and the second row is p_err
+    optimized_parameters = out.beta
+    parameter_errors = out.sd_beta
+    cov_matrix = out.cov_beta
+    y_fit = line_func(optimized_parameters, x)
+    print(cov_matrix)
+    return optimized_parameters, parameter_errors, cov_matrix # Returns a two-dimensional array where the first row is p_opt, and the second row is p_err
 
 # Calculate the reduced chi-squared value in one dimension (uses y-errors only):
 def calc_reduced_chisquare_1d(opt_parameters, x_vals, y_vals, y_errors):
@@ -107,17 +107,17 @@ def plot_data(df, color, ecolor, label):
     # ax_data.scatter(x, y, c=color)
     ax_data.errorbar(x_adjusted, y, y_error, x_error, ls='none', color=ecolor, barsabove=True, zorder=3)
 
-    optimized_parameters = get_fit_parameters(x_adjusted, y, x_error, y_error)
-    print(optimized_parameters)
+    optimized_parameters, parameter_errors, cov_matrix = get_fit_parameters(x_adjusted, y, x_error, y_error)
+    print(optimized_parameters, parameter_errors)
     
-    best_fit_line = line_func(optimized_parameters[0], x_range_adjusted)
+    best_fit_line = line_func(optimized_parameters, x_range_adjusted)
     
     ax_data.plot(x_range_adjusted, best_fit_line, c=color, label=label, linewidth=0.8)
 
-    reduced_chisquare_1d = calc_reduced_chisquare_1d(optimized_parameters[0], x_adjusted, y, y_error)
-    reduced_chisquare_2d = calc_reduced_chisquare_2d(optimized_parameters[0], x_adjusted, y, x_error, y_error)
+    reduced_chisquare_1d = calc_reduced_chisquare_1d(optimized_parameters, x_adjusted, y, y_error)
+    reduced_chisquare_2d = calc_reduced_chisquare_2d(optimized_parameters, x_adjusted, y, x_error, y_error)
     
-    return optimized_parameters, reduced_chisquare_1d, reduced_chisquare_2d
+    return optimized_parameters, parameter_errors, cov_matrix, reduced_chisquare_1d, reduced_chisquare_2d
 
 #==================================================================================================
 
@@ -153,8 +153,8 @@ df_27mm = get_final_df(df_dates, '27', bias_voltage)
 df_38mm = get_final_df(df_dates, '38', bias_voltage)
 
 # Plot the data - the plot data function is called and set as variables for optimized parameters and reduced chisquared values for the data.
-optimized_parameters_27mm, reduced_chisquare_1d_27mm, reduced_chisquare_2d_27mm = plot_data(df_27mm, color_27mm, ecolor_27mm, '27mm')
-optimized_parameters_38mm, reduced_chisquare_1d_38mm, reduced_chisquare_2d_38mm = plot_data(df_38mm, color_38mm, ecolor_38mm, '38mm')
+optimized_parameters_27mm, parameter_errors_27mm, cov_matrix_27mm, reduced_chisquare_1d_27mm, reduced_chisquare_2d_27mm = plot_data(df_27mm, color_27mm, ecolor_27mm, '27mm')
+optimized_parameters_38mm, parameter_errors_38mm, cov_matrix_38mm, reduced_chisquare_1d_38mm, reduced_chisquare_2d_38mm = plot_data(df_38mm, color_38mm, ecolor_38mm, '38mm')
 
 #==================================================================================================
 
@@ -166,14 +166,14 @@ temperature_values = np.array([166, 167, 168, 169, 170, 171, 172])
 temperature_values_adjusted = temperature_values-169
 
 # Variables representing the slope, intercept, and errors on the slope and intercept for both separations
-(slope_27mm, intercept_27mm), (slope_error_27mm, intercept_error_27mm) = optimized_parameters_27mm
-(slope_38mm, intercept_38mm), (slope_error_38mm, intercept_error_38mm) = optimized_parameters_38mm
-(slope_27mm, intercept_27mm), (slope_error_27mm, intercept_error_27mm) = optimized_parameters_27mm
-(slope_38mm, intercept_38mm), (slope_error_38mm, intercept_error_38mm) = optimized_parameters_38mm
+(slope_27mm, intercept_27mm) = optimized_parameters_27mm
+(slope_38mm, intercept_38mm) = optimized_parameters_38mm
+(slope_error_27mm, intercept_error_27mm) = parameter_errors_27mm
+(slope_error_38mm, intercept_error_38mm) = parameter_errors_38mm
 
 # Find the ratio line
-best_fit_line_27mm = line_func(optimized_parameters_27mm[0], temperature_values_adjusted)
-best_fit_line_38mm = line_func(optimized_parameters_38mm[0], temperature_values_adjusted)
+best_fit_line_27mm = line_func(optimized_parameters_27mm, temperature_values_adjusted)
+best_fit_line_38mm = line_func(optimized_parameters_38mm, temperature_values_adjusted)
 
 ratio_line = best_fit_line_38mm/best_fit_line_27mm
 ax_ratio.plot(temperature_values_adjusted, ratio_line, c=ratio_color, label='ratio', linewidth=0.75)
@@ -191,25 +191,21 @@ for temperature in temperature_values_adjusted:
     expected_voltage_38mm = slope_38mm*temperature + intercept_38mm
     expected_voltages_38mm.append(expected_voltage_38mm)
 
-    sqrt = np.sqrt
-    (a, b), (da, db) = optimized_parameters_38mm
-    (c, d), (dc, dd) = optimized_parameters_27mm
-    
-    T = temperature
+    rho_27mm = cov_matrix_27mm[0][1] / ( np.sqrt(cov_matrix_27mm[0][0]) * np.sqrt(cov_matrix_27mm[1][1]) )
+    rho_38mm = cov_matrix_38mm[0][1] / ( np.sqrt(cov_matrix_38mm[0][0]) * np.sqrt(cov_matrix_38mm[1][1]) )
 
-    rho_27mm = 0.5049
-    rho_38mm = 0.3309
+    best_fit_27mm = line_func(optimized_parameters_27mm, temperature)
+    best_fit_38mm = line_func(optimized_parameters_38mm, temperature)
 
-    x = a*T + b
-    y = c*T + d
-    dx = sqrt(T**2 * da**2 + db**2 + 2*rho_38mm*da*T*db)
-    dy = sqrt(T**2 * dc**2 + dd**2 + 2*rho_27mm*dc*T*dd)
-    
-    ratio_error = abs(x/y) * sqrt( (dx / x)**2 + (dy / y)**2 )
+    best_fit_error_27mm = np.sqrt( temperature**2 * slope_error_27mm**2 + intercept_error_27mm**2 + 2*rho_27mm*slope_error_27mm*temperature*intercept_error_27mm)
+    best_fit_error_38mm = np.sqrt( temperature**2 * slope_error_38mm**2 + intercept_error_38mm**2 + 2*rho_38mm*slope_error_38mm*temperature*intercept_error_38mm)
+
+    ratio_error = (best_fit_38mm/best_fit_27mm) * np.sqrt( (best_fit_error_38mm/best_fit_38mm)**2 + (best_fit_error_27mm/best_fit_27mm)**2 )
 
     ratio_errors.append(ratio_error)
 
-# print(ratio_errors)
+print('rho 27', rho_27mm)
+print('rho 38', rho_38mm)
 
 # Find and plot the ratio points (optional - mainly used for testing purposes)
 ratio_points = np.divide(expected_voltages_38mm, expected_voltages_27mm)
@@ -222,7 +218,7 @@ ax_ratio.errorbar(temperature_values_adjusted, ratio_points, ratio_errors, ls='n
 #==================================================================================================
 ### Plot Settings
 # Setting the y range for both axes
-ax_data.set_ylim(0.675, 0.8)
+ax_data.set_ylim(0.6, 1.6)
 ax_ratio.set_ylim(0, 1.0)
 
 # Setting the axis labels
@@ -241,15 +237,15 @@ plt.title('27mm: {}   38mm: {}'.format(date_27mm, date_38mm))
 # Creating Text boxes - list the slope, intercept, and errors for each separation
 txtstr_27mm = '\n'.join(['Best fit function:', 
                         'V = c*(T-169) + d',
-                        'slope c = {:.4f} +/- {:.4f}'.format(optimized_parameters_27mm[0][0], optimized_parameters_27mm[1][0]),
-                        'intercept d = {:.4f} +/- {:.4f}'.format(optimized_parameters_27mm[0][1], optimized_parameters_27mm[1][1]),
+                        'slope c = {:.4f} +/- {:.4f}'.format(slope_27mm, slope_error_27mm),
+                        'intercept d = {:.4f} +/- {:.4f}'.format(intercept_27mm, intercept_error_27mm),
                         r'$\chi^2_{1D}$' + f' = {reduced_chisquare_1d_27mm:.6f}',
                         r'$\chi^2_{2D}$' + f' = {reduced_chisquare_2d_27mm:.6f}'])
 
 txtstr_38mm = '\n'.join(['Best fit function:',
                         'V = a*(T-169) + b',
-                        'slope a = {:.4f} +/- {:.4f}'.format(optimized_parameters_38mm[0][0], optimized_parameters_38mm[1][0]),
-                        'intercept b = {:.4f} +/- {:.4f}'.format(optimized_parameters_38mm[0][1], optimized_parameters_38mm[1][1]),
+                        'slope a = {:.4f} +/- {:.4f}'.format(slope_38mm, slope_error_38mm),
+                        'intercept b = {:.4f} +/- {:.4f}'.format(intercept_38mm, intercept_error_38mm),
                         r'$\chi^2_{1D}$' + f' = {reduced_chisquare_1d_38mm:.6f}',
                         r'$\chi^2_{2D}$' + f' = {reduced_chisquare_2d_38mm:.6f}'])
 
