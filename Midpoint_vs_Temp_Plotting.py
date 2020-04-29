@@ -21,7 +21,7 @@ sns.set()
 ### Variables: Set these to indicate the desired date, separation, and bias voltage for the plot
 
 date_list = ['20190516', '20190424']
-bias_voltage = '50V'
+bias_voltage = '47V'
 
 # Color Variables
 color_27mm = '#FF5A8C'
@@ -68,8 +68,8 @@ def get_fit_parameters(x, y, x_err, y_err):
     parameter_errors = out.sd_beta
     cov_matrix = out.cov_beta
     y_fit = line_func(optimized_parameters, x)
-    print(cov_matrix)
-    return optimized_parameters, parameter_errors, cov_matrix # Returns a two-dimensional array where the first row is p_opt, and the second row is p_err
+    # print(cov_matrix)
+    return optimized_parameters, parameter_errors, cov_matrix 
 
 # Calculate the reduced chi-squared value in one dimension (uses y-errors only):
 def calc_reduced_chisquare_1d(opt_parameters, x_vals, y_vals, y_errors):
@@ -108,7 +108,6 @@ def plot_data(df, color, ecolor, label):
     ax_data.errorbar(x_adjusted, y, y_error, x_error, ls='none', color=ecolor, barsabove=True, zorder=3)
 
     optimized_parameters, parameter_errors, cov_matrix = get_fit_parameters(x_adjusted, y, x_error, y_error)
-    print(optimized_parameters, parameter_errors)
     
     best_fit_line = line_func(optimized_parameters, x_range_adjusted)
     
@@ -171,10 +170,11 @@ temperature_values_adjusted = temperature_values-169
 (slope_error_27mm, intercept_error_27mm) = parameter_errors_27mm
 (slope_error_38mm, intercept_error_38mm) = parameter_errors_38mm
 
-# Find the ratio line
+# Find the best fit lines for each separations
 best_fit_line_27mm = line_func(optimized_parameters_27mm, temperature_values_adjusted)
 best_fit_line_38mm = line_func(optimized_parameters_38mm, temperature_values_adjusted)
 
+# Find the ratio line by taking the ratio of the best fit lines
 ratio_line = best_fit_line_38mm/best_fit_line_27mm
 ax_ratio.plot(temperature_values_adjusted, ratio_line, c=ratio_color, label='ratio', linewidth=0.75)
 
@@ -191,21 +191,24 @@ for temperature in temperature_values_adjusted:
     expected_voltage_38mm = slope_38mm*temperature + intercept_38mm
     expected_voltages_38mm.append(expected_voltage_38mm)
 
+    # Correlation parameters (rho)
     rho_27mm = cov_matrix_27mm[0][1] / ( np.sqrt(cov_matrix_27mm[0][0]) * np.sqrt(cov_matrix_27mm[1][1]) )
     rho_38mm = cov_matrix_38mm[0][1] / ( np.sqrt(cov_matrix_38mm[0][0]) * np.sqrt(cov_matrix_38mm[1][1]) )
 
+    # Best fit at the specified temperature value
     best_fit_27mm = line_func(optimized_parameters_27mm, temperature)
     best_fit_38mm = line_func(optimized_parameters_38mm, temperature)
 
+    # Errors on the best fit lines
     best_fit_error_27mm = np.sqrt( temperature**2 * slope_error_27mm**2 + intercept_error_27mm**2 + 2*rho_27mm*slope_error_27mm*temperature*intercept_error_27mm)
     best_fit_error_38mm = np.sqrt( temperature**2 * slope_error_38mm**2 + intercept_error_38mm**2 + 2*rho_38mm*slope_error_38mm*temperature*intercept_error_38mm)
 
+    # Calculate the ratio errors
     ratio_error = (best_fit_38mm/best_fit_27mm) * np.sqrt( (best_fit_error_38mm/best_fit_38mm)**2 + (best_fit_error_27mm/best_fit_27mm)**2 )
-
     ratio_errors.append(ratio_error)
 
-print('rho 27', rho_27mm)
-print('rho 38', rho_38mm)
+# print('rho 27', rho_27mm)
+# print('rho 38', rho_38mm)
 
 # Find and plot the ratio points (optional - mainly used for testing purposes)
 ratio_points = np.divide(expected_voltages_38mm, expected_voltages_27mm)
@@ -218,8 +221,8 @@ ax_ratio.errorbar(temperature_values_adjusted, ratio_points, ratio_errors, ls='n
 #==================================================================================================
 ### Plot Settings
 # Setting the y range for both axes
-ax_data.set_ylim(0.6, 1.6)
-ax_ratio.set_ylim(0, 1.0)
+ax_data.set_ylim(1.2, 3.2)
+ax_ratio.set_ylim(0.2, 2.2)
 
 # Setting the axis labels
 ax_data.set_xlabel('Temperature [K]', fontsize=14)
@@ -255,6 +258,7 @@ ax_ratio.set_position((0.1, 0.1, 0.6, 0.8))
 plt.figtext(0.78, 0.5, txtstr_27mm, color=txt_color_27mm, fontsize=10)
 plt.figtext(0.78, 0.25, txtstr_38mm, color=txt_color_38mm, fontsize=10)
 
+# Label the x ticks with the actual temperature values (166-172)
 for ax in [ax_data, ax_ratio]:
     locs = ax.get_xticks()
     adjusted_locs = [str(int(l+169)) for l in locs]
@@ -263,4 +267,4 @@ for ax in [ax_data, ax_ratio]:
 plt.grid(False)
 ax_data.legend(bbox_to_anchor=(1.4, 1.0))
 ax_ratio.legend(bbox_to_anchor=(1.38, 0.9))
-plt.show()
+# plt.show()
