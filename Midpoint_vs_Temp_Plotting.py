@@ -21,7 +21,7 @@ sns.set()
 ### Variables: Set these to indicate the desired date, separation, and bias voltage for the plot
 
 date_list = ['20190516', '20190424']
-bias_voltage = '47V'
+bias_voltage = '48V'
 
 # Color Variables
 color_27mm = '#FF5A8C'
@@ -150,6 +150,11 @@ df_dates = df_cols[df_cols['date'].isin(date_list)]
 # Get the final data frames
 df_27mm = get_final_df(df_dates, '27', bias_voltage)
 df_38mm = get_final_df(df_dates, '38', bias_voltage)
+print(df_27mm)
+
+# Deletes the first row of the dataframe only if the bias voltage is 48V (it's a funky data point)
+if bias_voltage == '48V':
+    df_27mm = df_27mm.iloc[1:]
 
 # Plot the data - the plot data function is called and set as variables for optimized parameters and reduced chisquared values for the data.
 optimized_parameters_27mm, parameter_errors_27mm, cov_matrix_27mm, reduced_chisquare_1d_27mm, reduced_chisquare_2d_27mm = plot_data(df_27mm, color_27mm, ecolor_27mm, '27mm')
@@ -221,8 +226,8 @@ ax_ratio.errorbar(temperature_values_adjusted, ratio_points, ratio_errors, ls='n
 #==================================================================================================
 ### Plot Settings
 # Setting the y range for both axes
-ax_data.set_ylim(1.2, 3.2)
-ax_ratio.set_ylim(0.2, 2.2)
+ax_data.set_ylim(0.2, 0.7)
+ax_ratio.set_ylim(0.2, 0.7)
 
 # Setting the axis labels
 ax_data.set_xlabel('Temperature [K]', fontsize=14)
@@ -267,4 +272,4 @@ for ax in [ax_data, ax_ratio]:
 plt.grid(False)
 ax_data.legend(bbox_to_anchor=(1.4, 1.0))
 ax_ratio.legend(bbox_to_anchor=(1.38, 0.9))
-# plt.show()
+plt.show()

@@ -1,5 +1,6 @@
-# Creates a plot of the ratio vs. temperature at all bias voltages.
+# Creates a plot of the ratio vs. bias voltage at 169K temperature only. 
 #==================================================================================================
+
 import h5py
 import csv
 import pandas as pd
@@ -15,52 +16,30 @@ import seaborn as sns
 sns.set()
 
 #==================================================================================================
-### Variables: Set these to indicate the desired date, separation, and bias voltage for the plot
+### Variables: set these to indicate the desired dates, temperature, and bias voltages for the plot.
 
 date_list = ['20190516', '20190424']
-separation_list = ['27', '38']
+# temperature = range(168.5, 169.5)
 bias_voltages = ['47V', '48V', '49V', '50V', '51V', '52V']
-# bias_voltages = ['47V']
 
-temperature_values = np.array([166, 167, 168, 169, 170, 171, 172])
-
-# A dictionary that sets the color of the line based on the value of the bias voltage
-colors = {
-    '47V': '#FF0000',
-    '48V': '#FF7D00',
-    '49V': '#FFE100',
-    '50V': '#00C800',
-    '51V': '#0096FF',
-    '52V': '#A000FF',
-}
-
-error_colors = {
-    '47V': '#BF0000',
-    '48V': '#CC6400',
-    '49V': '#CCB400',
-    '50V': '#008000',
-    '51V': '#0050FF',
-    '52V': '#7800BF',
-}
+plot_color = '#A000FF'
 
 fig, ax = plt.subplots()
 
 #==================================================================================================
-### Functions: These are all of the functions that will be needed in order to create a complete plot
+### Functions: These are all of the functions that will be needed in order to create the plot
 
-# Extracting the bias voltage
+# Create the final data frame by extracting the correct separation and temperature.
 def get_final_df(df, separation, voltage):
     sep = df['separation'] == separation
     bv = df['biasV'] == voltage
-    df_final = df_dates.loc[sep & bv]
+    df_final = df_dates.loc[sep & temp]
     return df_final
 
 # Finding the best fit line
 # Model function:
 def line_func(p, x):
     (a, b) = p
-    # assert type(a) == float or type(a) == np.float or type(a) == np.float64, f"{type(a)} {a}"
-    # assert type(x) == np.array or type(x) == np.ndarray, f"{type(x)} {x}"
     return a*x + b
 
 # Get the a and b parameters that best fit the data:
@@ -76,16 +55,6 @@ def get_fit_parameters(x, y, x_err, y_err,):
     y_fit = line_func(optimized_parameters, x)
 
     return optimized_parameters, parameter_errors, cov_matrix
-'''
-# Calculate the reduced chi-squared value:
-def calc_reduced_chisquare(opt_params, x_vals, y_vals, y_errors):
-    y_exp = line_func(opt_params, np.array(x_vals))
-    len_y_data = len(y_vals)
-    num_parameters = 2
-    chisquare = np.sum(((y_exp-y_vals)/y_errors)**2)
-    reduced_chisquare = chisquare/(len_y_data-num_parameters)
-    return reduced_chisquare
-'''
 
 # Defines the x values, y values, x errors, and y errors in the data. 
 # Finds the optimized parameters for the best fit line of the data, and returns the optimized parameters, parameter error, and the covariance matrix. 
@@ -105,11 +74,9 @@ def analyze_data(df):
     return optimized_parameters, parameter_errors, cov_matrix
 
 #==================================================================================================
-
-#==================================================================================================
 ### Extract all of the information needed for the whole plot
 
-# Use pandas to create a dataframe using all of the data in alphas.h5
+# Use pandas to create a dataframe using all of the data in alphas.h5.
 # The result is a big table of data that looks like the alpha frame list in the app.
 alphas_filename = 'alphas.h5'
 
@@ -122,7 +89,7 @@ with pd.HDFStore(alphas_filename, 'r') as hdf:
             whole_df = whole_df.append(hdf[key])
         i += 1
 
-# Extract all of the columns needed 
+# Extract all of the columns needed
 df_cols = whole_df[['date', 'separation', 'biasV', 'midpoint', 'midpt_error', 'temperature_avg', 'temperature_rms']]
 
 # Extract all of the dates needed - the resulting dataframe will include every date in date_list
