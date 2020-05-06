@@ -46,8 +46,6 @@ error_colors = {
     '52V': '#7800BF',
 }
 
-fig, ax = plt.subplots()
-
 #==================================================================================================
 ### Functions
 
@@ -92,6 +90,8 @@ def plot_settings(separation_1, separation_2, df_1, df_2):
 ### Execute Functions
 
 if __name__ == '__main__':
+
+    fig, ax = plt.subplots()
 
     # Create the dataframes
     df_dates = create_df(alphas_filename)
