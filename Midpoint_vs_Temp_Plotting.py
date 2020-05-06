@@ -39,13 +39,6 @@ txt_color_2 = '#0086B3'
 ratio_color = '#00B400'
 ratio_ecolor = '#007800'
 
-# Defining the variables for the figure and both axes. 
-# Setting the width of the figure.
-fig, ax_data = plt.subplots()
-fig.set_figwidth(9)
-fig.set_figheight(6)
-ax_ratio = ax_data.twinx()
-
 #==================================================================================================
 ### Functions
 
@@ -70,7 +63,7 @@ def create_df(filename):
 def get_final_df(df, separation, voltage):
     sep = df['separation'] == separation
     bv = df['biasV'] == voltage
-    df_final = df_dates.loc[sep & bv]
+    df_final = df.loc[sep & bv]
     return df_final
 
 # Linear function (model for the best fit function).
@@ -114,7 +107,7 @@ def calc_reduced_chisquare_2d(opt_parameters, x_vals, y_vals, x_errors, y_errors
     return reduced_chisquare_2d
 
 # Plot the raw data points and the error bars, find and plot the best fit line.
-# Returns the optimized parameters, parameter errors, and covaraince matrix for the best fit line, and both reduced chisquare values.
+# Returns the optimized parameters, parameter errors, and covariance matrix for the best fit line, and both reduced chisquare values.
 def plot_data(df, color, ecolor, label):
     x_range = np.array(range(166, 173))
 
@@ -140,18 +133,19 @@ def plot_data(df, color, ecolor, label):
     return optimized_parameters, parameter_errors, cov_matrix, reduced_chisquare_1d, reduced_chisquare_2d
 
 # Find the ratio of the data and return the slope, intercept, and errors on the slope and intercept of the best fit line.
-def plot_ratio_line(optimized_parameters_1, optimized_parameters_2, temperatures, color, label):
+def get_ratio_line(optimized_parameters_1, optimized_parameters_2, temperatures):
     # Find the best fit line for each separation
     best_fit_line_1 = line_func(optimized_parameters_1, temperatures)
     best_fit_line_2 = line_func(optimized_parameters_2, temperatures)
 
     # Find the ratio line by taking the ratio of the best fit lines
     ratio_line = best_fit_line_2/best_fit_line_1
-    ax_ratio.plot(temperatures, ratio_line, c=color, label=label, linewidth=0.75)
+
+    return ratio_line
 
 # Find the errors on the ratio by propagating errors on the best fit lines
 # Make sure that the lower parameter value = variable_1, and higher parameter value = variable_2
-def get_ratio_errors(optimized_parameters_1, optimized_parameters_2, parameter_errors_1, parameter_errors_2, cov_matrix_1, cov_matrix_2, temperatures, color):
+def get_ratio_errors(optimized_parameters_1, optimized_parameters_2, parameter_errors_1, parameter_errors_2, cov_matrix_1, cov_matrix_2, temperatures):
     # Variables representing the slope, intercept, and errors on the slope and intercept
     (slope_1, intercept_1) = optimized_parameters_1
     (slope_2, intercept_2) = optimized_parameters_2
@@ -191,9 +185,8 @@ def get_ratio_errors(optimized_parameters_1, optimized_parameters_2, parameter_e
     
     # Plot the ratio errors
     ratio_points = np.divide(expected_voltages_2, expected_voltages_1)
-    ax_ratio.errorbar(temperatures, ratio_points, ratio_errors, ls='none', color=color, barsabove=True, zorder=3)
-
-    return slope_1, intercept_1, slope_error_1, intercept_error_1, slope_2, intercept_2, slope_error_2, intercept_error_2
+    
+    return (slope_1, intercept_1, slope_error_1, intercept_error_1), (slope_2, intercept_2, slope_error_2, intercept_error_2), ratio_points, ratio_errors
 
 # Set the text strings for the plot
 def set_text_str(slope_label, intercept_label, slope, intercept, slope_error, intercept_error, reduced_chisquare_1d, reduced_chisquare_2d):
@@ -206,8 +199,8 @@ def set_text_str(slope_label, intercept_label, slope, intercept, slope_error, in
     return txt_str
 
 # General plot settings and functions 
-def plot(df_1, df_2, separation_1, separation_2, slope_1, slope_2, intercept_1, intercept_2, slope_error_1, slope_error_2, intercept_error_1, intercept_error_2, reduced_chisquare_1d_1, reduced_chisquare_1d_2, reduced_chisquare_2d_1, reduced_chisquare_2d_2):
-    
+def plot_settings(df_1, df_2, separation_1, separation_2, fit_parameters_1, fit_parameters_2, reduced_chisquare_1d_1, reduced_chisquare_1d_2, reduced_chisquare_2d_1, reduced_chisquare_2d_2):
+
     # Setting the y range for both axes
     ax_data.set_ylim(*y_range_data)
     ax_ratio.set_ylim(*y_range_ratio)
@@ -226,8 +219,8 @@ def plot(df_1, df_2, separation_1, separation_2, slope_1, slope_2, intercept_1, 
     plt.title('{}mm: {}   {}mm: {}'.format(separation_1, date_1, separation_2, date_2))
     
     # Creating the text boxes
-    txtstr_1 = set_text_str('a', 'b', slope_1, intercept_1, slope_error_1, intercept_error_1, reduced_chisquare_1d_1, reduced_chisquare_2d_1)
-    txtstr_2 = set_text_str('c', 'd', slope_2, intercept_2, slope_error_2, intercept_error_2, reduced_chisquare_1d_2, reduced_chisquare_2d_2)
+    txtstr_1 = set_text_str('a', 'b', *fit_parameters_1, reduced_chisquare_1d_1, reduced_chisquare_2d_1)
+    txtstr_2 = set_text_str('c', 'd', *fit_parameters_2, reduced_chisquare_1d_2, reduced_chisquare_2d_2)
 
     # Setting the position of the text on the figure
     ax_data.set_position((0.1, 0.1, 0.6, 0.8))
@@ -251,9 +244,16 @@ def plot(df_1, df_2, separation_1, separation_2, slope_1, slope_2, intercept_1, 
 
 # This if statement runs the code when the script isn't being imported
 if __name__ == '__main__':
+
+    # Defining the variables for the figure and both axes. 
+    # Setting the width of the figure.
+    fig, ax_data = plt.subplots()
+    fig.set_figwidth(9)
+    fig.set_figheight(6)
+    ax_ratio = ax_data.twinx()
     
     # Create the dataframes
-    df_dates =create_df(alphas_filename)
+    df_dates = create_df(alphas_filename)
 
     df_27mm = get_final_df(df_dates, '27', bias_voltage)
     df_38mm = get_final_df(df_dates, '38', bias_voltage)
@@ -267,12 +267,15 @@ if __name__ == '__main__':
     optimized_parameters_38mm, parameter_errors_38mm, cov_matrix_38mm, reduced_chisquare_1d_38mm, reduced_chisquare_2d_38mm = plot_data(df_38mm, color_2, ecolor_2, '38mm')
 
     # Plot the ratio line
-    plot_ratio_line(optimized_parameters_27mm, optimized_parameters_38mm, temperature_values_adjusted, ratio_color, 'ratio')
+    ratio_line = get_ratio_line(optimized_parameters_27mm, optimized_parameters_38mm, temperature_values_adjusted)
+    ax_ratio.plot(temperature_values_adjusted, ratio_line, c=ratio_color, label='ratio', linewidth=0.75)
 
     # Plot the ratio errors
-    slope_27mm, intercept_27mm, slope_error_27mm, intercept_error_27mm, slope_38mm, intercept_38mm, slope_error_38mm, intercept_error_38mm = get_ratio_errors(optimized_parameters_27mm, optimized_parameters_38mm, parameter_errors_27mm, parameter_errors_38mm, cov_matrix_27mm, cov_matrix_38mm, temperature_values_adjusted, ratio_ecolor)
+    # slope_27mm, intercept_27mm, slope_error_27mm, intercept_error_27mm, slope_38mm, intercept_38mm, slope_error_38mm, intercept_error_38mm, ratio_points, ratio_errors = get_ratio_errors(optimized_parameters_27mm, optimized_parameters_38mm, parameter_errors_27mm, parameter_errors_38mm, cov_matrix_27mm, cov_matrix_38mm, temperature_values_adjusted)
+    fit_parameters_27mm, fit_parameters_38mm, ratio_points, ratio_errors = get_ratio_errors(optimized_parameters_27mm, optimized_parameters_38mm, parameter_errors_27mm, parameter_errors_38mm, cov_matrix_27mm, cov_matrix_38mm, temperature_values_adjusted)
+    ax_ratio.errorbar(temperature_values_adjusted, ratio_points, ratio_errors, ls='none', color=ratio_ecolor, barsabove=True, zorder=3)
 
-    plot(df_27mm, df_38mm, '27', '38', slope_27mm, slope_38mm, intercept_27mm, intercept_38mm, slope_error_27mm, slope_error_38mm, intercept_error_27mm, intercept_error_38mm, reduced_chisquare_1d_27mm, reduced_chisquare_1d_38mm, reduced_chisquare_2d_27mm, reduced_chisquare_2d_38mm)
-
+    # Plot settings
+    plot_settings(df_27mm, df_38mm, '27', '38', fit_parameters_27mm, fit_parameters_38mm, reduced_chisquare_1d_27mm, reduced_chisquare_1d_38mm, reduced_chisquare_2d_27mm, reduced_chisquare_2d_38mm)
 
 #==================================================================================================
