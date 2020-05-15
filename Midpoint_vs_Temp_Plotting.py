@@ -18,7 +18,7 @@ sns.set()
 ### Variables
 
 alphas_filename = 'alphas.h5'
-date_list = ['20190516', '20190424']
+date_list = ['20190228', '20190212', '20190207', '20190124', '20181210', '20181211', '20181212', '20181204', '20181119']
 
 temperature_values = np.array([166, 167, 168, 169, 170, 171, 172])
 temperature_values_adjusted = temperature_values-169
@@ -189,7 +189,7 @@ def set_text_str(slope_label, intercept_label, slope, intercept, slope_error, in
 if __name__ == '__main__':
 
     # Variables
-    bias_voltage = '47V'
+    bias_voltage = '50V'
     y_range_data = (0.1, 0.6)
     y_range_ratio = (0.1, 0.6)
 
@@ -204,35 +204,31 @@ if __name__ == '__main__':
 
     df_27mm = get_final_df(df_dates, '27', bias_voltage)
     df_38mm = get_final_df(df_dates, '38', bias_voltage)
+    df_31mm = get_final_df(df_dates, '31.07', bias_voltage)
 
     # Deletes the first row of the dataframe only if the bias voltage is 48V and the separation is 27mm.
-    if bias_voltage ==  '48V':
-        df_27mm = df_27mm.iloc[1]
+    # if bias_voltage ==  '48V':
+        # df_27mm = df_27mm.iloc[1]
     
     # Plot the data and set the variables for the optimized parameters, parameter errors, covariance matrix, and reduced chi-square values.
     fit_parameters_27mm, best_fit_line_27mm, cov_matrix_27mm, reduced_chisquare_1d_27mm, reduced_chisquare_2d_27mm = plot_data(df_27mm, color_27mm, ecolor_27mm, '27mm')
-    # optimized_parameters_27mm = fit_parameters_27mm[0]
-    # parameter_errors_27mm = fit_parameters_27mm[1]
-
-    fit_parameters_38mm, best_fit_line_38mm, cov_matrix_38mm, reduced_chisquare_1d_38mm, reduced_chisquare_2d_38mm = plot_data(df_38mm, color_38mm, ecolor_38mm, '38mm')
-    # optimized_parameters_38mm = fit_parameters_38mm[0]
-    # parameter_errors_38mm = fit_parameters_38mm[1]
+    # fit_parameters_38mm, best_fit_line_38mm, cov_matrix_38mm, reduced_chisquare_1d_38mm, reduced_chisquare_2d_38mm = plot_data(df_38mm, color_38mm, ecolor_38mm, '38mm')
+    # fit_parameters_31mm, best_fit_line_31mm, cov_matrix_31mm, reduced_chisquare_1d_31mm, reduced_chisquare_2d_31mm = plot_data(df_31mm, color_31mm, ecolor_31mm, '31mm')
 
     # Find and plot the ratio line
-    ratio_line = best_fit_line_38mm/best_fit_line_27mm
-    ax_ratio.plot(temperature_values_adjusted, ratio_line, c=ratio_color, label='ratio', linewidth=0.75)
+    # ratio_line = best_fit_line_38mm/best_fit_line_27mm
+    # ax_ratio.plot(temperature_values_adjusted, ratio_line, c=ratio_color, label='ratio', linewidth=0.75)
 
     # Find and plot the ratio errors
-    ratio_points, ratio_errors = get_ratio_errors(fit_parameters_27mm, fit_parameters_38mm, best_fit_line_27mm, best_fit_line_38mm, cov_matrix_27mm, cov_matrix_38mm, temperature_values_adjusted)
-    print(ratio_errors)
-    ax_ratio.errorbar(temperature_values_adjusted, ratio_points, ratio_errors, ls='none', color=ratio_ecolor, barsabove=True, zorder=3)
+    # ratio_points, ratio_errors = get_ratio_errors(fit_parameters_27mm, fit_parameters_38mm, best_fit_line_27mm, best_fit_line_38mm, cov_matrix_27mm, cov_matrix_38mm, temperature_values_adjusted)
+    # ax_ratio.errorbar(temperature_values_adjusted, ratio_points, ratio_errors, ls='none', color=ratio_ecolor, barsabove=True, zorder=3)
 
     #==============================================================================================
     ## Plot settings
     
     # Setting the y range for both axes
-    ax_data.set_ylim(*y_range_data)
-    ax_ratio.set_ylim(*y_range_ratio)
+    # ax_data.set_ylim(*y_range_data)
+    # ax_ratio.set_ylim(*y_range_ratio)
 
     # Setting the axis labels
     ax_data.set_xlabel('Temperature [K]', fontsize=14)
@@ -244,20 +240,24 @@ if __name__ == '__main__':
     
     date_27mm = ", ".join(df_27mm.date.unique())
     date_38mm = ", ".join(df_38mm.date.unique())
+    date_31mm = ". ".join(df_31mm.date.unique())
 
     plt.title('27mm: {}   38mm: {}'.format(date_27mm, date_38mm))
 
     # Creating the text boxes
     (slope_27mm, intercept_27mm), (slope_error_27mm, intercept_error_27mm) = fit_parameters_27mm
-    (slope_38mm, intercept_38mm), (slope_error_38mm, intercept_error_38mm) = fit_parameters_38mm
+    # (slope_38mm, intercept_38mm), (slope_error_38mm, intercept_error_38mm) = fit_parameters_38mm
+    # (slope_31mm, intercept_31mm), (slope_error_31mm, intercept_error_31mm) = fit_parameters_31mm
     txtstr_27mm = set_text_str('a', 'b', slope_27mm, intercept_27mm, slope_error_27mm, intercept_error_27mm, reduced_chisquare_1d_27mm, reduced_chisquare_2d_27mm)
-    txtstr_38mm = set_text_str('c', 'd', slope_38mm, intercept_38mm, slope_error_38mm, intercept_error_38mm, reduced_chisquare_1d_38mm, reduced_chisquare_2d_38mm)
+    # txtstr_38mm = set_text_str('c', 'd', slope_38mm, intercept_38mm, slope_error_38mm, intercept_error_38mm, reduced_chisquare_1d_38mm, reduced_chisquare_2d_38mm)
+    # txtstr_31mm = set_text_str('e', 'f', slope_31mm, intercept_31mm, slope_error_31mm, intercept_error_31mm, reduced_chisquare_1d_31mm, reduced_chisquare_2d_31mm)
 
     # Setting the position of the text on the figure
     ax_data.set_position((0.1, 0.1, 0.6, 0.8))
     ax_ratio.set_position((0.1, 0.1, 0.6, 0.8))
     plt.figtext(0.78, 0.5, txtstr_27mm, color=txt_color_27mm, fontsize=10)
-    plt.figtext(0.78, 0.25, txtstr_38mm, color=txt_color_38mm, fontsize=10)
+    # plt.figtext(0.78, 0.25, txtstr_38mm, color=txt_color_38mm, fontsize=10)
+    # plt.figtext(0.78, 0.1, txtstr_31mm, color=txt_color_31mm, fontsize=10)
 
     # Label the x-ticks with the actual temperature values (166-172)
     for ax in [ax_data, ax_ratio]:
