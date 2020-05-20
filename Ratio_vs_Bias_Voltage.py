@@ -77,7 +77,7 @@ if __name__ == '__main__':
     fig.set_figheight(6)
 
     # Create the dataframes
-    df_dates = create_df(alphas_filename)
+    df_dates = create_df(alphas_filename, date_list)
 
     ratio_list = []
     ratio_error_list = []
