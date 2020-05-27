@@ -21,7 +21,7 @@ from Mid_vs_Temp_Pre_Baking import final_df, plot_data
 ### Variables
 
 alphas_filename = 'alphas.h5'
-date_list = ['20190207']
+date_list = ['20181211', '20181212']
 
 temperature_values = np.array([166, 167, 168, 169, 170, 171, 172])
 temperature_values_adjusted = temperature_values-169
@@ -46,6 +46,15 @@ error_colors = {
 }
 
 #==================================================================================================
+### Functions
+
+def set_text_str(bias_voltage, slope_val, slope_err):
+    txt_str = '\n'.join([
+                        '{}:'.format(bias_voltage),
+                        'slope = {:.4f} +/- {:.4f}'.format(slope_val, slope_err)])
+    return txt_str
+
+#==================================================================================================
 ### Executing Functions
 
 if __name__ == '__main__':
@@ -57,35 +66,58 @@ if __name__ == '__main__':
 
     df_dates = create_df(alphas_filename, date_list)
 
+    slopes = []
+    slope_errors = []
+    txt_pos = 0.85
     for voltage in bias_voltages:
 
         dataframe = get_final_df(df_dates, '27', voltage)
 
-        fit_parameters, best_fit_line, cov_matrix, reduced_chisquare_1d, reduced_chisquare_2d = plot_data(dataframe, colors[voltage], error_colors[voltage], ax, voltage)
+        # fit_parameters, best_fit_line, cov_matrix, reduced_chisquare_1d, reduced_chisquare_2d = plot_data(dataframe, colors[voltage], error_colors[voltage], ax, voltage)
+        
+        x = dataframe[['temperature_avg']].values[:, 0]
+        x_adjusted = x-169
+        y_vals = dataframe[['midpoint']].values[:, 0]
+        x_error = dataframe[['temperature_rms']].values[:, 0]
+        y_error = dataframe[['midpt_error']].values[:, 0]
+        
+        fit_parameters, cov_matrix = get_fit_parameters(x_adjusted, y_vals, x_error, y_error)
         (slope, intercept), (slope_error, intercept_error) = fit_parameters
+        slopes.append(slope)
+        slope_errors.append(slope_error)
+
+        txt = set_text_str(voltage, slope, slope_error)
+        plt.figtext(0.73, txt_pos, txt, fontsize=10)
+        txt_pos = txt_pos - 0.1
+        
+
+    ax.plot(bias_voltages, slopes, c='#0096FF')
+    ax.errorbar(bias_voltages, slopes, slope_errors, ls='none', color='#7800BF', barsabove=True, zorder=3)
+
 
     #==============================================================================================
     ## Plot settings
 
     # Setting the axis labels 
-    ax.set_xlabel('Temperature [K]')
-    ax.set_ylabel('Midpoint [V]')
+    ax.set_xlabel('Bias Voltage [V]')
+    ax.set_ylabel('Slope')
 
-    ax.set_xlim(-4, 4, 1)
+    # ax.set_xlim(-4, 4, 1)
     # ax.set_ylim(0.6, 1.2)
 
     # Setting the super title and the title
-    plt.suptitle('Midpoint vs. Temperature at All Bias Voltages')
-
     date = ", ".join(df_dates.date.unique())
-    plt.title(date)
+    plt.suptitle('Linear Slope vs. Bias Voltage {}'.format(date))
+
+    # date = ", ".join(df_dates.date.unique())
+    # plt.title('{}'.format(date))
 
     # Label the x-ticks with the actual temperature values
-    for ax in [ax]:
-        locs = ax.get_xticks()
-        adjusted_locs = [str(int(l+169)) for l in locs]
-        ax.set_xticklabels(adjusted_locs)
+    # for ax in [ax]:
+    #     locs = ax.get_xticks()
+    #     adjusted_locs = [str(int(l+169)) for l in locs]
+    #     ax.set_xticklabels(adjusted_locs)
     
     plt.grid(True)
-    ax.legend(bbox_to_anchor=(1.4, 1.05))
+    # ax.legend(bbox_to_anchor=(1.4, 1.05))
     plt.show()
