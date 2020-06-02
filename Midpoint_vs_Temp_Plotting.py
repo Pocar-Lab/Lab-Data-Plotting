@@ -201,6 +201,8 @@ if __name__ == '__main__':
 
     # Create the dataframes
     df_dates = create_df(alphas_filename, date_list)
+    print(df_dates)
+    print(df_dates.shape)
 
     df_27mm = get_final_df(df_dates, '27', bias_voltage)
     df_38mm = get_final_df(df_dates, '38', bias_voltage)
