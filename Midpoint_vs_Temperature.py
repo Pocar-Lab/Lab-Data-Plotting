@@ -160,48 +160,80 @@ elif len(separations) == 2:
 
 elif len(separations) == 3:
 
-    # dfs = [create_df(df_all_data, sep, bias_voltage) for sep in separations]
+    # Create the separate dataframes for each individual line, saving them to a list of all three
+    dataframes = [create_df(df_all_data, sep, bias_voltage) for sep in separations]
 
-    # for a, b in combinations(separations, 2):
-
-    # Create the separate dataframes for each individual line
-    df_27mm = create_df(df_all_data, separations[0], bias_voltage)
-    df_31mm = create_df(df_all_data, separations[1], bias_voltage)
-    df_38mm = create_df(df_all_data, separations[2], bias_voltage)
-
-    # Call the function to plot the data, and return the fit parameters, cov matrix, and text string
-    fit_parameters_27mm, cov_matrix_27mm, txt_str_27mm = plot_data(ax_data, 'a', 'b', df_27mm, separations[0], bias_voltage, data_colors[separations[0]], data_error_colors[separations[0]], label='{}mm'.format(separations[0]))
-    fit_parameters_31mm, cov_matrix_31mm, txt_str_31mm = plot_data(ax_data, 'c', 'd', df_31mm, separations[1], bias_voltage, data_colors[separations[1]], data_error_colors[separations[1]], label='{}mm'.format(separations[1]))
-    fit_parameters_38mm, cov_matrix_38mm, txt_str_38mm = plot_data(ax_data, 'e', 'f', df_38mm, separations[2], bias_voltage, data_colors[separations[2]], data_error_colors[separations[2]], label='{}mm'.format(separations[2]))
+    # Call the function to plot the data, and return the fit parameters, cov matrix, and the text string
+    parameter_labels = [['a', 'b'], ['c', 'd'], ['e', 'f']]     # List of the differnet parameter labels to use for the text string
+    par_dict = dict()       # The dictionary the outputs in the plot_data function will be saved to 
+    for i, sep in enumerate(separations):
+        fit_parameters, cov_matrix, txt_str = plot_data(ax_data, parameter_labels[i][0], parameter_labels[i][1], dataframes[i], sep, bias_voltage, data_colors[sep], data_error_colors[sep], label='{}mm'.format(sep))
+        par_dict[sep] = {'fit_parameters': fit_parameters, 'cov_matrix': cov_matrix, 'txt_str', txt_str}
 
     # Setting the plot title variable
-    date_27mm = ", ".join(df_27mm.date.unique())
-    date_31mm = ", ".join(df_31mm.date.unique())
-    date_38mm = ", ".join(df_38mm.date.unique())
-    plot_title = '27mm: {}     31mm: {}     38mm: {}'.format(date_27mm, date_31mm, date_38mm)
+    dates = []
+    for i, sep in enumerate(separations):
+        date_string = ', '.join(dataframes[i].date.unique())
+        dates.append('{}mm: {}'.format(sep, date_string))
+    plot_title = '     '.join(dates)
 
     # Setting the positions of the text on the figure
-    plt.figtext(0.78, 0.5, txt_str_27mm, color=data_colors[separations[0]], fontsize=10)
-    plt.figtext(0.78, 0.25, txt_str_31mm, color=data_colors[separations[1]], fontsize=10)
-    plt.figtext(0.78, 0.1, txt_str_38mm, color=data_colors[separations[2]], fontsize=10)
+    plt.figtext(0.78, 0.5, d[separations[0]]['txt_str'], color=data_colors[separations[0]], fontsize=10)
+    plt.figtext(0.78, 0.25, d[separations[1]]['txt_str'], color=data_colors[separations[1]], fontsize=10)
+    plt.figtext(0.78, 0.1, d[separations[2]]['txt_str'], color=data_colors[separations[2]], fontsize=10)
 
+    # Plot the ratios if the plot_ratios variable is set to True
     if plot_ratios:
 
         ax_ratio = ax_data.twinx()
         ax_ratio.set_position((0.1, 0.1, 0.6, 0.8))
 
         # Find and plot the ratios and the ratio errors
-        ratio_yvalues_2731, ratio_line_2731, ratio_errors_2731 = get_ratio_errors(fit_parameters_27mm, fit_parameters_31mm, cov_matrix_27mm, cov_matrix_31mm, temperature_ints_shifted)
-        ratio_yvalues_2738, ratio_line_2738, ratio_errors_2738 = get_ratio_errors(fit_parameters_27mm, fit_parameters_38mm, cov_matrix_27mm, cov_matrix_38mm, temperature_ints_shifted)
-        ratio_yvalues_3138, ratio_line_3138, ratio_errors_3138 = get_ratio_errors(fit_parameters_31mm, fit_parameters_38mm, cov_matrix_31mm, cov_matrix_38mm, temperature_ints_shifted)
+        for a, b in combinations(separations, 2):       # Iterate through every combination of two separation values - a & b represent two possible separation values.
+            ratio_yvalues_ab, ratio_line_ab, ratio_errors_ab = get_ratio_errors(par_dict[a]['fit_parameters'], par_dict[b]['fit_parameters'], par_dict[a]['cov_matrix'], par_dict[b]['cov_matrix'], temperature_ints_shifted)
+            ax_ratio.plot(temperature_ints_shifted, ratio_line_ab, c=ratio_colors['ratio_1'], label='ratio {}mm/{}mm'.format(b, a), linewidth=0.75)
+            ax_ratio.errorbar(temperature_ints_shifted, ratio_yvalues_ab, ratio_errors_ab, ls='none', color=ratio_error_colors['ratio_1'], barsabove=True, zorder=3)
 
-        ax_ratio.plot(temperature_ints_shifted, ratio_line_2731, c=ratio_colors['ratio_1'], label='ratio {}mm/{}mm'.format(separations[1], separations[0]), linewidth=0.75)
-        ax_ratio.plot(temperature_ints_shifted, ratio_line_2738, c=ratio_colors['ratio_2'], label='ratio {}mm/{}mm'.format(separations[2], separations[0]), linewidth=0.75)
-        ax_ratio.plot(temperature_ints_shifted, ratio_line_3138, c=ratio_colors['ratio_3'], label='ratio {}mm/{}mm'.format(separations[2], separations[1]), linewidth=0.75)
+    # =============================================================
 
-        ax_ratio.errorbar(temperature_ints_shifted, ratio_yvalues_2731, ratio_errors_2731, ls='none', color=ratio_error_colors['ratio_1'], barsabove=True, zorder=3)
-        ax_ratio.errorbar(temperature_ints_shifted, ratio_yvalues_2738, ratio_errors_2738, ls='none', color=ratio_error_colors['ratio_2'], barsabove=True, zorder=3)
-        ax_ratio.errorbar(temperature_ints_shifted, ratio_yvalues_3138, ratio_errors_3138, ls='none', color=ratio_error_colors['ratio_3'], barsabove=True, zorder=3)
+    # # Create the separate dataframes for each individual line
+    # df_27mm = create_df(df_all_data, separations[0], bias_voltage)
+    # df_31mm = create_df(df_all_data, separations[1], bias_voltage)
+    # df_38mm = create_df(df_all_data, separations[2], bias_voltage)
+
+    # # Call the function to plot the data, and return the fit parameters, cov matrix, and text string
+    # fit_parameters_27mm, cov_matrix_27mm, txt_str_27mm = plot_data(ax_data, 'a', 'b', df_27mm, separations[0], bias_voltage, data_colors[separations[0]], data_error_colors[separations[0]], label='{}mm'.format(separations[0]))
+    # fit_parameters_31mm, cov_matrix_31mm, txt_str_31mm = plot_data(ax_data, 'c', 'd', df_31mm, separations[1], bias_voltage, data_colors[separations[1]], data_error_colors[separations[1]], label='{}mm'.format(separations[1]))
+    # fit_parameters_38mm, cov_matrix_38mm, txt_str_38mm = plot_data(ax_data, 'e', 'f', df_38mm, separations[2], bias_voltage, data_colors[separations[2]], data_error_colors[separations[2]], label='{}mm'.format(separations[2]))
+
+    # # Setting the plot title variable
+    # date_27mm = ", ".join(df_27mm.date.unique())
+    # date_31mm = ", ".join(df_31mm.date.unique())
+    # date_38mm = ", ".join(df_38mm.date.unique())
+    # plot_title = '27mm: {}     31mm: {}     38mm: {}'.format(date_27mm, date_31mm, date_38mm)
+
+    # Setting the positions of the text on the figure
+    # plt.figtext(0.78, 0.5, d[separations[0]]['txt_str'], color=data_colors[separations[0]], fontsize=10)
+    # plt.figtext(0.78, 0.25, d[separations[1]]['txt_str'], color=data_colors[separations[1]], fontsize=10)
+    # plt.figtext(0.78, 0.1, d[separations[2]]['txt_str'], color=data_colors[separations[2]], fontsize=10)
+
+    # if plot_ratios:
+
+    #     ax_ratio = ax_data.twinx()
+    #     ax_ratio.set_position((0.1, 0.1, 0.6, 0.8))
+
+        # # Find and plot the ratios and the ratio errors
+        # ratio_yvalues_2731, ratio_line_2731, ratio_errors_2731 = get_ratio_errors(fit_parameters_27mm, fit_parameters_31mm, cov_matrix_27mm, cov_matrix_31mm, temperature_ints_shifted)
+        # ratio_yvalues_2738, ratio_line_2738, ratio_errors_2738 = get_ratio_errors(fit_parameters_27mm, fit_parameters_38mm, cov_matrix_27mm, cov_matrix_38mm, temperature_ints_shifted)
+        # ratio_yvalues_3138, ratio_line_3138, ratio_errors_3138 = get_ratio_errors(fit_parameters_31mm, fit_parameters_38mm, cov_matrix_31mm, cov_matrix_38mm, temperature_ints_shifted)
+
+        # ax_ratio.plot(temperature_ints_shifted, ratio_line_2731, c=ratio_colors['ratio_1'], label='ratio {}mm/{}mm'.format(separations[1], separations[0]), linewidth=0.75)
+        # ax_ratio.plot(temperature_ints_shifted, ratio_line_2738, c=ratio_colors['ratio_2'], label='ratio {}mm/{}mm'.format(separations[2], separations[0]), linewidth=0.75)
+        # ax_ratio.plot(temperature_ints_shifted, ratio_line_3138, c=ratio_colors['ratio_3'], label='ratio {}mm/{}mm'.format(separations[2], separations[1]), linewidth=0.75)
+
+        # ax_ratio.errorbar(temperature_ints_shifted, ratio_yvalues_2731, ratio_errors_2731, ls='none', color=ratio_error_colors['ratio_1'], barsabove=True, zorder=3)
+        # ax_ratio.errorbar(temperature_ints_shifted, ratio_yvalues_2738, ratio_errors_2738, ls='none', color=ratio_error_colors['ratio_2'], barsabove=True, zorder=3)
+        # ax_ratio.errorbar(temperature_ints_shifted, ratio_yvalues_3138, ratio_errors_3138, ls='none', color=ratio_error_colors['ratio_3'], barsabove=True, zorder=3)
 
 #==========================================================================================================
 
