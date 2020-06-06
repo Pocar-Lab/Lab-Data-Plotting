@@ -20,8 +20,8 @@ from Midpoint_vs_Temp_Plotting import create_df, get_final_df, line_func, get_fi
 ### Variables
 
 alphas_filename = 'alphas.h5'
-# date_list = ['20190207', '20190124', '20181212', '20181211', '20181210']
-date_list = ['20181212', '20181211', '20181210']
+date_list = ['20190207', '20190124', '20181212', '20181211']
+# date_list = ['20181212', '20181211', '20181210']
 # date_list = ['20181212', '20181211']
 # date_list = ['20181210']
 
