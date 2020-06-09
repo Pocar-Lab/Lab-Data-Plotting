@@ -29,9 +29,9 @@ from Midpoint_vs_Temperature import plot_data, set_text_str
 ### Variables ###
 
 ## Change these variables to specify the desired conditions for the plot
-date_list = ['20190207', '20181211']
+date_list = ['20190228', '20181119']
 bias_voltage = '50V'
-separation = '27'
+separation = '31.07'
 y_range = (0.5, 1.4)
 
 ## Color variables
@@ -39,24 +39,24 @@ colors = {
     '20190207': '#FF0000',
     '20190124': '#FF7D00',
     '20181212': '#00C800',
-    '20181211': '#0096FF',
-    '20181210': '#A000FF',
+    '20190228': '#0096FF',
+    '20181119': '#A000FF',
 }
 
 error_colors = {
     '20190207': '#BF0000',
     '20190124': '#CC6400',
     '20181212': '#008000',
-    '20181211': '#0050FF',
-    '20181210': '#7800BF',
+    '20190228': '#0050FF',
+    '20181119': '#7800BF',
 }
 
 label = {
     '20190207': '02/07/2019',
     '20190124': '01/24/2019',
     '20181212': '12/12/2018',
-    '20181211': '12/11/2018',
-    '20181210': '12/10/2018',
+    '20190228': '02/28/2019',
+    '20181119': '11/19/2018',
 }
 
 ## Unchanged variables
@@ -101,6 +101,7 @@ for df in dataframes:
     plt.figtext(0.75, txt_pos, txt_str, color=colors[date], fontsize=10)
     txt_pos = txt_pos-0.2
 
+#==========================================================================================================
 ### Plot Settings ###
 
 # Setting the axis labels 

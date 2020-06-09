@@ -27,9 +27,9 @@ from Functions import *
 ### Variables ###
 
 ## Change these variables to specify the desired conditions for the plot
-date_list = ['20181211', '20190207']    # List the dates for all of the data you wish to include in the plot
+date_list = ['20181204', '20190228', '20181119', '20190207', '20181211']    # List the dates for all of the data you wish to include in the plot
 bias_voltage = '50V'                    # Enter the bias voltage you want to plot at
-separations = ['27']              # List the separation(s) you wish to include in the plot. For more than one separation
+separations = ['27', '31.07', '38']              # List the separation(s) you wish to include in the plot. For more than one separation
 plot_ratios = False                     # Indicate whether or not you want ratios included in on the plot 
 y_range_data = (0.0, 1.8)               # Set the range for the left y-axis (this sets the scale for the data)
 y_range_ratio = (0.1, 1.0)              # Set the range for the right y-axis (this sets the scale for the ratio)
@@ -43,7 +43,7 @@ data_colors = {
 
 data_error_colors = {
     '27': '#990F4C',
-    '31.07': 'CC6400',
+    '31.07': '#CC6400',
     '38': '#7800BF',
 }
 
@@ -121,7 +121,7 @@ if __name__ == '__main__':
         dataframe = create_df(df_all_data, separations[0], bias_voltage)
         
         # Delete the data point that's been mislabeled as 50V
-        dataframe = dataframe[dataframe['midpoint'] > 1.0]
+        # dataframe = dataframe[dataframe['midpoint'] > 1.0]
 
         fit_parameters, cov_matrix, txt_str = plot_data(ax_data, 'a', 'b', dataframe, separations[0], bias_voltage, data_colors[separations[0]], data_error_colors[separations[0]], label='{}mm'.format(separations[0]))
 
@@ -170,7 +170,14 @@ if __name__ == '__main__':
     elif len(separations) == 3:
 
         # Create the separate dataframes for each individual line, saving them to a list of all three
-        dataframes = [create_df(df_all_data, sep, bias_voltage) for sep in separations]
+        # dataframes = [create_df(df_all_data, sep, bias_voltage) for sep in separations]
+
+        dataframes = []
+        for sep in separations:
+            dataframe = create_df(df_all_data, sep, bias_voltage)
+            if sep == '27':
+                dataframe = dataframe[dataframe['midpoint'] > 1.0]
+            dataframes.append(dataframe)
 
         # Call the function to plot the data, and return the fit parameters, cov matrix, and the text string
         parameter_labels = [['a', 'b'], ['c', 'd'], ['e', 'f']]     # List of the differnet parameter labels to use for the text string
@@ -187,9 +194,9 @@ if __name__ == '__main__':
         plot_title = '     '.join(dates)
 
         # Setting the positions of the text on the figure
-        plt.figtext(0.78, 0.5, d[separations[0]]['txt_str'], color=data_colors[separations[0]], fontsize=10)
-        plt.figtext(0.78, 0.25, d[separations[1]]['txt_str'], color=data_colors[separations[1]], fontsize=10)
-        plt.figtext(0.78, 0.1, d[separations[2]]['txt_str'], color=data_colors[separations[2]], fontsize=10)
+        plt.figtext(0.78, 0.5, par_dict[separations[0]]['txt_str'], color=data_colors[separations[0]], fontsize=10)
+        plt.figtext(0.78, 0.3, par_dict[separations[1]]['txt_str'], color=data_colors[separations[1]], fontsize=10)
+        plt.figtext(0.78, 0.1, par_dict[separations[2]]['txt_str'], color=data_colors[separations[2]], fontsize=10)
 
         # Plot the ratios if the plot_ratios variable is set to True
         if plot_ratios:
