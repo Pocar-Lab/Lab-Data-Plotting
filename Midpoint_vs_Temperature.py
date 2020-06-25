@@ -28,9 +28,9 @@ from Functions import *
 
 ## Change these variables to specify the desired conditions for the plot
 # date_list = ['20181204', '20190228', '20181119', '20190207', '20181211']    # List the dates for all of the data you wish to include in the plot
-date_list = ['20190207', '20181211', '20181204', '20190228']
+date_list = ['20190424', '20190516']
 bias_voltage = '50V'                    # Enter the bias voltage you want to plot at
-separations = ['27', '31.07', '38']              # List the separation(s) you wish to include in the plot. For more than one separation
+separations = ['27', '38']              # List the separation(s) you wish to include in the plot. For more than one separation
 # residual_sub_plot = False                # Indicate whether or not you want to include the subplot of residuals
 plot_ratios = True                     # Indicate whether or not you want ratios included in on the plot 
 y_range_data = (0.0, 1.8)               # Set the range for the left y-axis (this sets the scale for the data)
@@ -50,14 +50,14 @@ data_error_colors = {
 }
 
 ratio_colors = {
-    '27_31.07': '#00B400',
-    '27_38': '#00E1BE',
+    '27_31.07': '#00E1BE',
+    '27_38': '#00B400',
     '31.07_38': '#0096FF',
 }
 
 ratio_error_colors = {
-    '27_31.07': '#007800',
-    '27_38': '#00A68C',
+    '27_31.07': '#00A68C',
+    '27_38': '#007800',
     '31.07_38': '#005F80',
 }
 
@@ -112,7 +112,7 @@ def plot_residuals(ax, temperatures, fit_parameters, midpoints, color, ecolor, s
     zeros = [0]*len(temperature_ints_shifted)
 
     ax.plot(temperature_ints_shifted, zeros, c=color, linewidth=0.8)
-    ax.scatter(temperatures, residuals, c=ecolor, marker='.', label='{}mm residual'.format(separation))
+    ax.scatter(temperatures, residuals, c=ecolor, marker='.', label='{} residual'.format(separation))
 
 #==========================================================================================================
 ### Executing Functions ###
@@ -188,8 +188,9 @@ if __name__ == '__main__':
 
             # Find and plot ratios and the ratio errors
             ratio_yvalues, ratio_line, ratio_errors = get_ratio_errors(fit_parameters_small, fit_parameters_large, cov_matrix_small, cov_matrix_large, temperature_ints_shifted)
-            ax_ratio.plot(temperature_ints_shifted, ratio_line, c=ratio_colors['ratio_1'], label='\n'.join(['ratio', '{}mm/{}mm']).format(separations[1], separations[0]), linewidth=0.75)
-            ax_ratio.errorbar(temperature_ints_shifted, ratio_yvalues, ratio_errors, ls='none', color=ratio_error_colors['ratio_1'], barsabove=True, zorder=3)
+            ax_ratio.plot(temperature_ints_shifted, ratio_line, c=ratio_colors[f'{separations[0]}_{separations[1]}'], label='\n'.join(['ratio', '{}mm/{}mm']).format(separations[1], separations[0]), linewidth=0.75)
+            ax_ratio.errorbar(temperature_ints_shifted, ratio_yvalues, ratio_errors, ls='none', color=ratio_error_colors[f'{separations[0]}_{separations[1]}'], barsabove=True, zorder=3)
+            ax_ratio.fill_between(temperature_ints_shifted, ratio_yvalues-ratio_errors, ratio_yvalues+ratio_errors, color=ratio_colors[f'{separations[0]}_{separations[1]}'], alpha=0.2)
 
             # Setting the positions of the text on the figure
             plt.figtext(0.78, 0.55, txt_str_small, color=data_colors[separations[0]], fontsize=10)
