@@ -146,5 +146,5 @@ txt_str_38mm = '\n'.join(['Dates taken at 38mm:', ' ', 'Before baking: {}'.forma
 plt.figtext(0.77, 0.45, txt_str_38mm, fontsize=10)
 
 plt.grid(True)
-ax.legend(bbox_to_anchor=(1.35, 1.0))
+ax.legend(bbox_to_anchor=(1.35, 1.0), frameon=False)
 plt.show()
