@@ -143,7 +143,7 @@ def get_ratio_errors(fit_parameters_1, fit_parameters_2, cov_matrix_1, cov_matri
         ratio_error = (expected_voltage_2 / expected_voltage_1) * np.sqrt( (best_fit_error_2/expected_voltage_2)**2 + (best_fit_error_1/expected_voltage_1)**2 )
         ratio_errors.append(ratio_error)
 
-    # Get the y-values for the ratio erros
+    # Get the y-values for the ratio errors
     ratio_yvals = np.divide(expected_voltages_2, expected_voltages_1)
 
     return ratio_yvals, ratio_line, ratio_errors

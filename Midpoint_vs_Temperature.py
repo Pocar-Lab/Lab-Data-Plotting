@@ -98,10 +98,10 @@ def plot_data(ax, slope_label, intercept_label, df, separation, voltage, color, 
     (slope_error, intercept_error) = fit_parameters[1]
     txt_str = set_text_str(slope_label, intercept_label, slope, intercept, slope_error, intercept_error, red_chisquare_2d)
 
-    return fit_parameters, temps_shifted, midpoints, cov_matrix, txt_str
+    return fit_parameters, temps_shifted, midpoints, midpoint_errors, cov_matrix, txt_str  # Fix the parameters going in when calling this function
 
 # Plot the residuals subplot
-def plot_residuals(ax, temperatures, fit_parameters, midpoints, color, ecolor, separation):
+def plot_residuals(ax, temperatures, fit_parameters, midpoints, midpoint_errors, color, ecolor, separation):
     y_expected_vals = []
 
     for temp in temperatures:
@@ -110,9 +110,41 @@ def plot_residuals(ax, temperatures, fit_parameters, midpoints, color, ecolor, s
     
     residuals = midpoints - y_expected_vals
     zeros = [0]*len(temperature_ints_shifted)
+    len_data = len(midpoints)
 
-    ax.plot(temperature_ints_shifted, zeros, c=color, linewidth=0.8)
-    ax.scatter(temperatures, residuals, c=ecolor, marker='.', label='{} residual'.format(separation))
+    residuals = np.array(residuals)
+    # residuals_sqrd = residuals**2
+    # residuals_sum = np.sum(residuals_sqrd)
+    # residual_errors = np.sqrt(residuals_sum/(len_data-2))
+
+    ax.plot(temperature_ints_shifted, zeros, c='black', linewidth=0.8)
+    ax.scatter(temperatures, residuals, c=color, marker='.', label='{} residual'.format(separation))
+    # ax.errorbar(temperatures, residuals, residual_errors, ls='none', color=ecolor, barsabove=True, zorder=3)
+    ax.errorbar(temperatures, residuals, midpoint_errors, ls='none', color=ecolor, barsabove=True, zorder=3)
+
+    return residuals
+### Fix the parameters going in when calling this function
+
+def residual_percentages(ax, temperatures, fit_parameters, midpoints, color, separation):
+    y_expected_vals = []
+
+    for temp in temperatures:
+        y_expected = linear_func(fit_parameters, temp)
+        y_expected_vals.append(y_expected)
+
+    zeros = [0]*len(temperature_ints_shifted)
+    
+    residuals = midpoints - y_expected_vals
+    residuals = np.array(residuals)
+    midpoints = np.array(midpoints)
+    residual_ratios = np.divide(residuals, midpoints)
+    # residual_ratios = np.absolute(residual_ratios)
+    residual_percentages = 100*residual_ratios
+    print('residual percentages = ', residual_percentages)
+
+    ax.plot(temperature_ints_shifted, zeros, c='black', linewidth=0.8)
+    ax.scatter(temperatures, residual_percentages, c=color, marker='.', label='{} residual'.format(separation))
+
 
 #==========================================================================================================
 ### Executing Functions ###
@@ -167,8 +199,8 @@ if __name__ == '__main__':
         fit_parameters_large, temps_shifted_large, midpoints_large, cov_matrix_large, txt_str_large = plot_data(ax_data, 'c', 'd', df_large_sep, separations[1], bias_voltage, data_colors[separations[1]], data_error_colors[separations[1]], label='{}mm'.format(separations[1]))
 
         # Plot the residuals on a subplot below the main plot
-        plot_residuals(ax_sub, temps_shifted_small, fit_parameters_small[0], midpoints_small, 'black', data_colors[separations[0]], separations[0])
-        plot_residuals(ax_sub, temps_shifted_large, fit_parameters_large[0], midpoints_large, 'black', data_colors[separations[1]], separations[1])
+        plot_residuals(ax_sub, temps_shifted_small, fit_parameters_small[0], midpoints_small, data_colors[separations[0]], data_error_colors[separations[0]], separations[0])
+        plot_residuals(ax_sub, temps_shifted_large, fit_parameters_large[0], midpoints_large, data_colors[separations[1]], data_error_colors[separations[1]], separations[1])
 
         # Setting the plot title variable
         date_small = ", ".join(df_small_sep.date.unique())
@@ -215,7 +247,7 @@ if __name__ == '__main__':
         for i, sep in enumerate(separations):
             fit_parameters, temps_shifted, midpoints, cov_matrix, txt_str = plot_data(ax_data, parameter_labels[i][0], parameter_labels[i][1], dataframes[i], sep, bias_voltage, data_colors[sep], data_error_colors[sep], label='{}mm'.format(sep))
             par_dict[sep] = {'fit_parameters': fit_parameters, 'cov_matrix': cov_matrix, 'txt_str': txt_str}
-            plot_residuals(ax_sub, temps_shifted, fit_parameters[0], midpoints, 'black', data_colors[sep], sep)
+            plot_residuals(ax_sub, temps_shifted, fit_parameters[0], midpoints, data_colors[sep], data_error_colors[sep], sep)
 
         # Setting the plot title variable
         dates = []

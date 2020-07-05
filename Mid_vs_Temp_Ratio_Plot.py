@@ -23,8 +23,11 @@ from Functions import *
 #==========================================================================================================
 ### Variables ###
 
-date_list = ['20190516', '20190424']
-separations = ['27', '38']
+# date_list = ['20190516', '20190424']
+date_before = ['20181204']
+date_after = ['20190411']
+separation = ['38']
+# separations = ['27', '38']
 bias_voltages = ['47V', '48V', '49V', '50V', '51V', '52V']
 
 alphas_filename = 'alphas.h5'
@@ -53,37 +56,42 @@ error_colors = {
 #==================================================================================================
 ### Executing Functions
 
-separations = sorted(separations)
+# separations = sorted(separations)
 
 # Variables for plotting
-fig, ax_ratio = plt.subplots()
-# ax_ratio.set_position((0.1, 0.1, 0.8, 0.8))
+fig, ax_ratio = plt.subplots(figsize=(8, 6))
+ax_ratio.set_position((0.1, 0.1, 0.7, 0.8))
 axes = [ax_ratio]
 
-df_all_data = compile_data(alphas_filename, date_list)
+# df_all_data = compile_data(alphas_filename, date_list)
 
 for voltage in bias_voltages:
 
     # Get the separated dataframes
-    df_small = create_df(df_all_data, separations[0], voltage)
-    df_large = create_df(df_all_data, separations[1], voltage)
+    # df_small = create_df(df_all_data, separations[0], voltage)
+    # df_large = create_df(df_all_data, separations[1], voltage)
+    df_before = compile_data(alphas_filename, date_before)
+    df_before = create_df(df_before, separation[0], voltage)
+    df_after = compile_data(alphas_filename, date_after)
+    df_after = create_df(df_after, separation[0], voltage)
 
     # Define the x and y values
-    temps_small, midpoints_small, temp_errors_small, midpoint_errors_small = define_xy_values(df_small, 'temperature_avg', 'midpoint', 'temperature_rms', 'midpt_error')
-    temps_small_shifted = temps_small-169
-    temps_large, midpoints_large, temp_errors_large, midpoint_errors_large = define_xy_values(df_large, 'temperature_avg', 'midpoint', 'temperature_rms', 'midpt_error')
-    temps_large_shifted = temps_large-169
+    temps_before, midpoints_before, temp_errors_before, midpoint_errors_before = define_xy_values(df_before, 'temperature_avg', 'midpoint', 'temperature_rms', 'midpt_error')
+    temps_before_shifted = temps_before-169
+    temps_after, midpoints_after, temp_errors_after, midpoint_errors_after = define_xy_values(df_after, 'temperature_avg', 'midpoint', 'temperature_rms', 'midpt_error')
+    temps_after_shifted = temps_after-169
 
     # Get the fit parameters for both sets of data
-    fit_parameters_small, cov_matrix_small = get_fit_parameters(temps_small_shifted, midpoints_small, temp_errors_small, midpoint_errors_small)
-    fit_parameters_large, cov_matrix_large = get_fit_parameters(temps_large_shifted, midpoints_large, temp_errors_large, midpoint_errors_large)
+    fit_parameters_before, cov_matrix_before = get_fit_parameters(temps_before_shifted, midpoints_before, temp_errors_before, midpoint_errors_before)
+    fit_parameters_after, cov_matrix_after = get_fit_parameters(temps_after_shifted, midpoints_after, temp_errors_after, midpoint_errors_after)
 
     # Find the ratios and the errors on the ratios 
-    ratio_y_vals, ratio_line, ratio_errors = get_ratio_errors(fit_parameters_small, fit_parameters_large, cov_matrix_small, cov_matrix_large, temperature_ints_shifted)
+    ratio_y_vals, ratio_line, ratio_errors = get_ratio_errors(fit_parameters_before, fit_parameters_after, cov_matrix_before, cov_matrix_after, temperature_ints_shifted)
 
     # Plot the ratio line and the ratio errors
     ax_ratio.plot(temperature_ints_shifted, ratio_line, c=colors[voltage], label=voltage)
     ax_ratio.errorbar(temperature_ints_shifted, ratio_y_vals, ratio_errors, ls='none', color=error_colors[voltage], barsabove=True, zorder=3)
+    ax_ratio.fill_between(temperature_ints_shifted, ratio_y_vals-ratio_errors, ratio_y_vals+ratio_errors, color=colors[voltage], alpha=0.2)
 
 #==================================================================================================
 ### Plot Settings
@@ -93,10 +101,10 @@ ax_ratio.set_xlabel('Temperature', fontsize=14)
 ax_ratio.set_ylabel('Ratio', fontsize=14)
 
 # Setting the super title and the title 
-plt.suptitle('Ratio of Best Fit Lines at {}mm and {}mm'.format(separations[0], separations[1]))
-date_small = ', '.join(df_small.date.unique())
-date_large = ', '.join(df_large.date.unique())
-plt.title('{}mm: {}     {}mm: {}'.format(separations[0], date_small, separations[1], date_large))
+plt.suptitle('Ratio of Best Fit Lines After Baking/Before Baking vs. Temperature at {}mm Separation'.format(separation[0]))
+date_1 = ', '.join(df_before.date.unique())
+date_2 = ', '.join(df_after.date.unique())
+plt.title('Before baking: {}    After baking: {}'.format(date_1, date_2))
 
 # Label the x-ticks with the actual temperature values (166-172)
 for ax in axes:
@@ -104,7 +112,6 @@ for ax in axes:
     adjusted_locs = [str(int(l+169)) for l in locs]
     ax.set_xticklabels(adjusted_locs)
 
-# ax_ratio.legend(bbox_to_anchor=(1.1, 1.0))
-ax_ratio.legend()
+ax_ratio.legend(bbox_to_anchor=(1.25, 1.0), frameon=False)
 plt.grid(True)
 plt.show()

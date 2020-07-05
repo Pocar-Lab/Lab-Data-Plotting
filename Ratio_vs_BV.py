@@ -27,7 +27,7 @@ date_list_before_38mm = ['20181204']
 date_list_after_38mm = ['20190411']
 
 separations = ['27', '38']
-temperature = np.array([168])
+temperature = np.array([172])
 temperature_shifted = temperature-169
 
 bias_voltages = ['47V', '48V', '49V', '50V', '51V', '52V']
@@ -47,7 +47,7 @@ fill_color_38mm = '#E9D9FF'
 #==========================================================================================================
 ### Executing Functions ###
 
-fig, ax = plt.subplots(figsize=(7, 6))
+fig, ax = plt.subplots(figsize=(8, 6))
 ax.set_position((0.1, 0.1, 0.66, 0.8))
 
 ratio_list_27mm = []
@@ -112,10 +112,10 @@ ratio_error_list_38mm = np.array(ratio_error_list_38mm).T[0]
 #==========================================================================================================
 ### Plotting the Data ###
 
-ax.scatter(bias_voltages, ratio_list_27mm, color=line_color_27mm, label='27mm Separation'.format(temperature[0]))
+ax.scatter(bias_voltages, ratio_list_27mm, color=line_color_27mm, label='27mm Separation')
 ax.errorbar(bias_voltages, ratio_list_27mm, ratio_error_list_27mm, ls='none', color=error_color_27mm, barsabove=True, zorder=3)
 
-ax.scatter(bias_voltages, ratio_list_38mm, color=line_color_38mm, label='38mm Separation'.format(temperature[0]))
+ax.scatter(bias_voltages, ratio_list_38mm, color=line_color_38mm, label='38mm Separation')
 ax.errorbar(bias_voltages, ratio_list_38mm, ratio_error_list_38mm, ls='none', color=error_color_38mm, barsabove=True, zorder=3)
 
 #==========================================================================================================
@@ -140,11 +140,11 @@ plt.suptitle('Ratio After Baking/Before Baking vs. Bias Voltage at {}K Temperatu
 
 # Setting the text strings
 txt_str_27mm = '\n'.join(['Dates taken at 27mm:', ' ', 'Before baking: {}'.format(date_before_27mm), 'After baking: {}'.format(date_after_27mm)])
-plt.figtext(0.77, 0.65, txt_str_27mm, fontsize=10)
+plt.figtext(0.8, 0.65, txt_str_27mm, fontsize=10)
 
 txt_str_38mm = '\n'.join(['Dates taken at 38mm:', ' ', 'Before baking: {}'.format(date_before_38mm), 'After baking: {}'.format(date_after_38mm)])
-plt.figtext(0.77, 0.45, txt_str_38mm, fontsize=10)
+plt.figtext(0.8, 0.45, txt_str_38mm, fontsize=10)
 
 plt.grid(True)
-ax.legend(bbox_to_anchor=(1.35, 1.0), frameon=False)
+ax.legend(bbox_to_anchor=(1.38, 1.0), frameon=False)
 plt.show()

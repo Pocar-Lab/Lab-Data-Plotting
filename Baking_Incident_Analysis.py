@@ -21,24 +21,24 @@ from Midpoint_vs_Temperature import *
 #==========================================================================================================
 ### Variables ###
 
-date_list_before = ['20181204']
-date_list_after = ['20190411']
-bias_voltage = '52V'
-separation = ['38']
+date_list_before = ['20190207']
+date_list_after = ['20190516']
+bias_voltage = '49V'
+separation = ['27']
 
 plot_ratios = True
-y_range_data = (1.0, 1.7)
-y_range_ratio = (0.9, 1.6)
+y_range_data = (0.5, 1.1)
+y_range_ratio = (1.0, 1.6)
 
 # Color variables 
 data_colors = {
-    '20190411': '#FF5A8C',
-    '20181204': '#B073FF',
+    '20190516': '#FF5A8C',
+    '20190207': '#B073FF',
 }
 
 data_error_colors = {
-    '20190411': '#B40F4C',
-    '20181204': '#7800BF',
+    '20190516': '#B40F4C',
+    '20190207': '#7800BF',
 }
 
 ratio_color = '#00B400'
@@ -64,7 +64,7 @@ df_after = create_df(df_after, separation[0], bias_voltage)
 
 # Preliminary variables for plotting
 fig, (ax_data, ax_sub) = plt.subplots(2, 1, sharex=False, figsize=(9, 6))
-ax_data.set_position((0.1, 0.4, 0.6, 0.5))
+ax_data.set_position((0.08, 0.4, 0.55, 0.5))
 ax_sub.set_position((0.11, 0.1, 0.57, 0.2))
 axes = [ax_data, ax_sub]
 
@@ -74,12 +74,14 @@ date_after = ', '.join(df_after.date.unique())
 plot_title = 'Before baking: {}     After baking: {}'.format(date_before, date_after)
 
 # Call the function to plot the data, and return the fit parameters, cov matrix, and text string
-fit_parameters_after, temps_shifted_after, midpoints_after, cov_matrix_after, txt_str_after = plot_data(ax_data, 'c', 'd', df_after, separation[0], bias_voltage, data_colors[date_list_after[0]], data_error_colors[date_list_after[0]], label='After baking')
-fit_parameters_before, temps_shifted_before, midpoints_before, cov_matrix_before, txt_str_before = plot_data(ax_data, 'a', 'b', df_before, separation[0], bias_voltage, data_colors[date_list_before[0]], data_error_colors[date_list_before[0]], label='Before baking')
+fit_parameters_after, temps_shifted_after, midpoints_after, midpoint_errors_after, cov_matrix_after, txt_str_after = plot_data(ax_data, 'c', 'd', df_after, separation[0], bias_voltage, data_colors[date_list_after[0]], data_error_colors[date_list_after[0]], label='After baking')
+fit_parameters_before, temps_shifted_before, midpoints_before, midpoint_errors_before, cov_matrix_before, txt_str_before = plot_data(ax_data, 'a', 'b', df_before, separation[0], bias_voltage, data_colors[date_list_before[0]], data_error_colors[date_list_before[0]], label='Before baking')
 
 # Plot the residuals on a subplot below the main plot
-plot_residuals(ax_sub, temps_shifted_after, fit_parameters_after[0], midpoints_after, 'black', data_colors[date_list_after[0]], 'After baking')
-plot_residuals(ax_sub, temps_shifted_before, fit_parameters_before[0], midpoints_before, 'black', data_colors[date_list_before[0]], 'Before baking')
+# plot_residuals(ax_sub, temps_shifted_after, fit_parameters_after[0], midpoints_after, midpoint_errors_after, data_colors[date_list_after[0]], data_error_colors[date_list_after[0]], 'After baking')
+# plot_residuals(ax_sub, temps_shifted_before, fit_parameters_before[0], midpoints_before, midpoint_errors_before, data_colors[date_list_before[0]], data_error_colors[date_list_before[0]], 'Before baking')
+residual_percentages(ax_sub, temps_shifted_after, fit_parameters_after[0], midpoints_after, data_colors[date_list_after[0]], 'After baking')
+residual_percentages(ax_sub, temps_shifted_before, fit_parameters_before[0], midpoints_before, data_colors[date_list_before[0]], 'Before baking')
 
 # Setting the positions of the text on the figure
 if not plot_ratios:
@@ -90,6 +92,7 @@ if plot_ratios:
 
     ax_ratio = ax_data.twinx()
     ax_ratio.set_position((0.08, 0.4, 0.6, 0.5))
+    ax_ratio.tick_params(axis='y', colors='green')
     axes = [ax_data, ax_sub, ax_ratio]
 
     # Find and plot ratios and the ratio errors
@@ -100,16 +103,16 @@ if plot_ratios:
 
     ratio_yvalues = np.array(ratio_yvalues)
     average_ratio = np.mean(ratio_yvalues)
-    print(average_ratio)
+    # print(average_ratio)
 
     # Setting the positions of the text on the figure
-    plt.figtext(0.78, 0.5, txt_str_after, color=data_colors[date_list_after[0]], fontsize=10)
-    plt.figtext(0.78, 0.33, txt_str_before, color=data_colors[date_list_before[0]], fontsize=10)
-    plt.figtext(0.78, 0.25, 'Average Ratio = {:.4f}'.format(average_ratio), color=ratio_color, fontsize=10)
+    plt.figtext(0.78, 0.55, txt_str_after, color=data_colors[date_list_after[0]], fontsize=10)
+    plt.figtext(0.78, 0.38, txt_str_before, color=data_colors[date_list_before[0]], fontsize=10)
+    plt.figtext(0.78, 0.3, 'Average Ratio = {:.4f}'.format(average_ratio), color=ratio_color, fontsize=10)
 
 before = (fit_parameters_before[0][0])*(-0.5) + fit_parameters_before[0][1]
 after = (fit_parameters_after[0][0])*(-0.5) + fit_parameters_after[0][1]
-print(after/before)
+# print(after/before)
 
 #==========================================================================================================
 ### Plot Settings ###
@@ -121,7 +124,7 @@ ax_data.set_ylim(*y_range_data)
 ax_data.set_xlabel('Temperature [K]', fontsize=14)
 ax_data.set_ylabel('Midpoint [V]', fontsize=14)
 ax_sub.set_xlabel('Temperature [K]', fontsize=14)
-ax_sub.set_ylabel('Residuals [V]', fontsize=14)
+ax_sub.set_ylabel('Residuals [%]', fontsize=14)
 
 # Label the x-ticks with the actual temperature values (166-172)
 for ax in axes:
@@ -135,10 +138,10 @@ plt.title('\n'.join([plot_suptitle, plot_title]), fontsize=12)
 # Settings for the ratio plot
 if plot_ratios:
     ax_ratio.set_ylim(y_range_ratio)
-    ax_ratio.set_ylabel('Ratio', fontsize=14)
-    ax_ratio.legend(bbox_to_anchor=(1.54, 0.7), frameon=False)
+    ax_ratio.set_ylabel('Ratio', color='green', fontsize=14)
+    ax_ratio.legend(bbox_to_anchor=(1.56, 0.75), frameon=False)
     ax_ratio.grid(False)
 
-ax_data.legend(bbox_to_anchor=(1.45, 1.0), frameon=False)
-ax_sub.legend(bbox_to_anchor=(1.45, 0.5), frameon=False)
+ax_data.legend(bbox_to_anchor=(1.47, 1.05), frameon=False)
+ax_sub.legend(bbox_to_anchor=(1.52, 0.7), frameon=False)
 plt.show()
