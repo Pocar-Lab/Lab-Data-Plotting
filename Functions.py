@@ -148,4 +148,38 @@ def get_ratio_errors(fit_parameters_1, fit_parameters_2, cov_matrix_1, cov_matri
 
     return ratio_yvals, ratio_line, ratio_errors
 
+def get_ratios(fit_parameters_1, fit_parameters_2, residual_std_1, residual_std_2, temperatures):
+
+    # Variables representing the slope and intercept 
+    optimized_parameters_1 = fit_parameters_1[0]
+    optimized_parameters_2 = fit_parameters_2[0]
+
+    # Find the ratio line
+    best_fit_line_1 = linear_func(optimized_parameters_1, temperatures)
+    best_fit_line_2 = linear_func(optimized_parameters_2, temperatures)
+    ratio_line = best_fit_line_2/best_fit_line_1
+
+    # Initializing lists for the expected voltages and ratio errors
+    expected_voltages_1 = []
+    expected_voltages_2 = []
+    ratio_errors = []
+
+    for temperature in temperatures:
+
+        # Expected values at separation 1
+        expected_voltage_1 = linear_func(optimized_parameters_1, temperature)
+        expected_voltages_1.append(expected_voltage_1)
+
+        # Expected values at separation 2
+        expected_voltage_2 = linear_func(optimized_parameters_2, temperature)
+        expected_voltages_2.append(expected_voltage_2)
+
+        # Calculate the ratio errors
+        ratio_error = (expected_voltage_2 / expected_voltage_1 ) * np.sqrt( (residual_std_2/expected_voltage_2)**2 + (residual_std_1/expected_voltage_1)**2 )
+        ratio_errors.append(ratio_error)
+    
+    ratio_yvals = np.divide(expected_voltages_2, expected_voltages_1)
+
+    return ratio_line, ratio_yvals, ratio_errors
+
 #==========================================================================================================

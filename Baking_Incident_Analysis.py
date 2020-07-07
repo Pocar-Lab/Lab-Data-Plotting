@@ -78,10 +78,12 @@ fit_parameters_after, temps_shifted_after, midpoints_after, midpoint_errors_afte
 fit_parameters_before, temps_shifted_before, midpoints_before, midpoint_errors_before, cov_matrix_before, txt_str_before = plot_data(ax_data, 'a', 'b', df_before, separation[0], bias_voltage, data_colors[date_list_before[0]], data_error_colors[date_list_before[0]], label='Before baking')
 
 # Plot the residuals on a subplot below the main plot
-# plot_residuals(ax_sub, temps_shifted_after, fit_parameters_after[0], midpoints_after, midpoint_errors_after, data_colors[date_list_after[0]], data_error_colors[date_list_after[0]], 'After baking')
-# plot_residuals(ax_sub, temps_shifted_before, fit_parameters_before[0], midpoints_before, midpoint_errors_before, data_colors[date_list_before[0]], data_error_colors[date_list_before[0]], 'Before baking')
-residual_percentages(ax_sub, temps_shifted_after, fit_parameters_after[0], midpoints_after, data_colors[date_list_after[0]], 'After baking')
-residual_percentages(ax_sub, temps_shifted_before, fit_parameters_before[0], midpoints_before, data_colors[date_list_before[0]], 'Before baking')
+residuals_after, residual_std_after = plot_residuals(ax_sub, temps_shifted_after, fit_parameters_after[0], midpoints_after, midpoint_errors_after, data_colors[date_list_after[0]], data_error_colors[date_list_after[0]], 'After baking')
+residuals_before, residual_std_before = plot_residuals(ax_sub, temps_shifted_before, fit_parameters_before[0], midpoints_before, midpoint_errors_before, data_colors[date_list_before[0]], data_error_colors[date_list_before[0]], 'Before baking')
+print(residual_std_after)
+print(residual_std_before)
+# residual_percentages(ax_sub, temps_shifted_after, fit_parameters_after[0], midpoints_after, residual_std_after, data_colors[date_list_after[0]], data_error_colors[date_list_after[0]], 'After baking')
+# residual_percentages(ax_sub, temps_shifted_before, fit_parameters_before[0], midpoints_before, residual_std_before, data_colors[date_list_before[0]], data_error_colors[date_list_before[0]], 'Before baking')
 
 # Setting the positions of the text on the figure
 if not plot_ratios:
@@ -96,7 +98,8 @@ if plot_ratios:
     axes = [ax_data, ax_sub, ax_ratio]
 
     # Find and plot ratios and the ratio errors
-    ratio_yvalues, ratio_line, ratio_errors = get_ratio_errors(fit_parameters_before, fit_parameters_after, cov_matrix_before, cov_matrix_after, temperature_ints_shifted)
+    # ratio_yvalues, ratio_line, ratio_errors = get_ratio_errors(fit_parameters_before, fit_parameters_after, cov_matrix_before, cov_matrix_after, temperature_ints_shifted)
+    ratio_line, ratio_yvalues, ratio_errors = get_ratios(fit_parameters_before, fit_parameters_after, residual_std_before, residual_std_after, temperature_ints_shifted)
     ax_ratio.plot(temperature_ints_shifted, ratio_line, c=ratio_color, label='After baking/Before baking', linewidth=0.8)
     ax_ratio.errorbar(temperature_ints_shifted, ratio_yvalues, ratio_errors, ls='none', color=ratio_error_color, barsabove=True, zorder=3)
     ax_ratio.fill_between(temperature_ints_shifted, ratio_yvalues-ratio_errors, ratio_yvalues+ratio_errors, color=ratio_color, alpha=0.2)
@@ -124,7 +127,7 @@ ax_data.set_ylim(*y_range_data)
 ax_data.set_xlabel('Temperature [K]', fontsize=14)
 ax_data.set_ylabel('Midpoint [V]', fontsize=14)
 ax_sub.set_xlabel('Temperature [K]', fontsize=14)
-ax_sub.set_ylabel('Residuals [%]', fontsize=14)
+ax_sub.set_ylabel('Residuals [V]', fontsize=14)
 
 # Label the x-ticks with the actual temperature values (166-172)
 for ax in axes:

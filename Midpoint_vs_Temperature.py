@@ -113,19 +113,20 @@ def plot_residuals(ax, temperatures, fit_parameters, midpoints, midpoint_errors,
     len_data = len(midpoints)
 
     residuals = np.array(residuals)
+    residual_std = np.std(residuals, ddof=2)
     # residuals_sqrd = residuals**2
     # residuals_sum = np.sum(residuals_sqrd)
-    # residual_errors = np.sqrt(residuals_sum/(len_data-2))
+    # residual_std = np.sqrt(residuals_sum/(len_data-2))
 
     ax.plot(temperature_ints_shifted, zeros, c='black', linewidth=0.8)
     ax.scatter(temperatures, residuals, c=color, marker='.', label='{} residual'.format(separation))
-    # ax.errorbar(temperatures, residuals, residual_errors, ls='none', color=ecolor, barsabove=True, zorder=3)
-    ax.errorbar(temperatures, residuals, midpoint_errors, ls='none', color=ecolor, barsabove=True, zorder=3)
+    ax.errorbar(temperatures, residuals, residual_std, ls='none', color=ecolor, barsabove=True, zorder=3)
+    # ax.errorbar(temperatures, residuals, midpoint_errors, ls='none', color=ecolor, barsabove=True, zorder=3)
 
-    return residuals
+    return residuals, residual_std
 ### Fix the parameters going in when calling this function
 
-def residual_percentages(ax, temperatures, fit_parameters, midpoints, color, separation):
+def residual_percentages(ax, temperatures, fit_parameters, midpoints, residual_std, color, ecolor, separation):
     y_expected_vals = []
 
     for temp in temperatures:
@@ -138,13 +139,11 @@ def residual_percentages(ax, temperatures, fit_parameters, midpoints, color, sep
     residuals = np.array(residuals)
     midpoints = np.array(midpoints)
     residual_ratios = np.divide(residuals, midpoints)
-    # residual_ratios = np.absolute(residual_ratios)
     residual_percentages = 100*residual_ratios
-    print('residual percentages = ', residual_percentages)
 
     ax.plot(temperature_ints_shifted, zeros, c='black', linewidth=0.8)
     ax.scatter(temperatures, residual_percentages, c=color, marker='.', label='{} residual'.format(separation))
-
+    ax.errorbar(temperatures, residual_percentages, residual_std, ls='none', color=ecolor, barsabove=True, zorder=3)
 
 #==========================================================================================================
 ### Executing Functions ###
