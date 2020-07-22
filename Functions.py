@@ -182,4 +182,26 @@ def get_ratios(fit_parameters_1, fit_parameters_2, residual_std_1, residual_std_
 
     return ratio_line, ratio_yvals, ratio_errors
 
+def get_residual_percentages(ax, temperatures, temperature_ints, fit_parameters, midpoints, midpoint_errors, color, ecolor, separation):
+    y_expected_vals = []
+
+    for temp in temperatures:
+        y_expected = linear_func(fit_parameters, temp)
+        y_expected_vals.append(y_expected)
+    
+    zeros = [0]*len(temperature_ints)
+
+    residuals = midpoints - y_expected_vals
+    residuals = np.array(residuals)
+    midpoints = np.array(midpoints)
+    residual_ratios = np.divide(residuals, midpoints)
+    residual_percentages = 100*residual_ratios
+    residual_percentages = np.array(residual_percentages)
+
+    residual_std = np.std(residual_percentages, ddof=2)
+
+    ax.plot(temperature_ints, zeros, c='black', linewidth=0.8)
+    ax.scatter(temperatures, residual_percentages, c=color, marker='.', label='{} residual'.format(separation))
+    ax.errorbar(temperatures, residual_percentages, residual_std, ls='none', color=ecolor, barsabove=True, zorder=3)
+
 #==========================================================================================================

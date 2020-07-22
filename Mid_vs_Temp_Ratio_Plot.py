@@ -19,14 +19,15 @@ import seaborn as sns
 sns.set()
 
 from Functions import *
+from Midpoint_vs_Temperature import plot_residuals
 
 #==========================================================================================================
 ### Variables ###
 
 # date_list = ['20190516', '20190424']
-date_before = ['20181204']
-date_after = ['20190411']
-separation = ['38']
+date_before = ['20190207']
+date_after = ['20190516']
+separation = ['27']
 # separations = ['27', '38']
 bias_voltages = ['47V', '48V', '49V', '50V', '51V', '52V']
 
@@ -72,8 +73,13 @@ for voltage in bias_voltages:
     # df_large = create_df(df_all_data, separations[1], voltage)
     df_before = compile_data(alphas_filename, date_before)
     df_before = create_df(df_before, separation[0], voltage)
+    if voltage == '50V':
+        df_before = df_before[df_before['midpoint'] > 1.0]
+    
     df_after = compile_data(alphas_filename, date_after)
     df_after = create_df(df_after, separation[0], voltage)
+    if voltage ==  '48V':
+        df_after = df_after.iloc[1:]
 
     # Define the x and y values
     temps_before, midpoints_before, temp_errors_before, midpoint_errors_before = define_xy_values(df_before, 'temperature_avg', 'midpoint', 'temperature_rms', 'midpt_error')
@@ -85,8 +91,13 @@ for voltage in bias_voltages:
     fit_parameters_before, cov_matrix_before = get_fit_parameters(temps_before_shifted, midpoints_before, temp_errors_before, midpoint_errors_before)
     fit_parameters_after, cov_matrix_after = get_fit_parameters(temps_after_shifted, midpoints_after, temp_errors_after, midpoint_errors_after)
 
+    # Get the residual standard deviation
+    residuals_after, residual_std_after = plot_residuals(ax_ratio, temps_after_shifted, fit_parameters_after[0], midpoints_after, midpoint_errors_after, colors[voltage], error_colors[voltage], 'After baking')
+    residuals_before, residual_std_before = plot_residuals(ax_ratio, temps_before_shifted, fit_parameters_before[0], midpoints_before, midpoint_errors_before, colors[voltage], error_colors[voltage], 'Before baking')
+
     # Find the ratios and the errors on the ratios 
-    ratio_y_vals, ratio_line, ratio_errors = get_ratio_errors(fit_parameters_before, fit_parameters_after, cov_matrix_before, cov_matrix_after, temperature_ints_shifted)
+    # ratio_y_vals, ratio_line, ratio_errors = get_ratio_errors(fit_parameters_before, fit_parameters_after, cov_matrix_before, cov_matrix_after, temperature_ints_shifted)
+    ratio_line, ratio_y_vals, ratio_errors = get_ratios(fit_parameters_before, fit_parameters_after, residual_std_before, residual_std_after, temperature_ints_shifted)
 
     # Plot the ratio line and the ratio errors
     ax_ratio.plot(temperature_ints_shifted, ratio_line, c=colors[voltage], label=voltage)

@@ -71,11 +71,10 @@ temperature_ints_shifted = temperature_ints-169
 
 # Set text strings to display on the figure
 def set_text_str(slope_label, intercept_label, slope, intercept, slope_error, intercept_error, reduced_chisquare_2d):
-    txt_str = '\n'.join(['Best fit function:',
-                        'V = {}*(T-169) + {}'.format(slope_label, intercept_label),
+    txt_str = '\n'.join(['V = {}*(T-169) + {}'.format(slope_label, intercept_label),
                         'slope {} = {:.4f} +/- {:.4f}'.format(slope_label, slope, slope_error),
                         'intercept {} = {:.4f} +/- {:.4f}'.format(intercept_label, intercept, intercept_error),
-                        r'$\chi^2_{2D}$' + f' = {reduced_chisquare_2d:.6f}'])
+                        r'$\chi^2_{2D}/dof$' + f' = {reduced_chisquare_2d:.1f}'])
     return txt_str
 
 # Plot the raw data
@@ -88,7 +87,7 @@ def plot_data(ax, slope_label, intercept_label, df, separation, voltage, color, 
     optimized_parameters = fit_parameters[0]
     best_fit_line = linear_func(optimized_parameters, temperature_ints_shifted)
 
-    ax.errorbar(temps_shifted, midpoints, midpoint_errors, temp_errors, ls='none', color=ecolor, barsabove=True, zorder=3, label=label+' error')
+    ax.errorbar(temps_shifted, midpoints, midpoint_errors, temp_errors, ls='none', color=ecolor, barsabove=True, zorder=3, label=label)
     ax.plot(temperature_ints_shifted, best_fit_line, c=color, label=label, linewidth=0.8)
 
     # red_chisquare_1d = calc_red_chisquare_1d(optimized_parameters, temps_shifted, midpoints, midpoint_errors)
@@ -118,15 +117,15 @@ def plot_residuals(ax, temperatures, fit_parameters, midpoints, midpoint_errors,
     # residuals_sum = np.sum(residuals_sqrd)
     # residual_std = np.sqrt(residuals_sum/(len_data-2))
 
-    ax.plot(temperature_ints_shifted, zeros, c='black', linewidth=0.8)
-    ax.scatter(temperatures, residuals, c=color, marker='.', label='{} residual'.format(separation))
-    ax.errorbar(temperatures, residuals, residual_std, ls='none', color=ecolor, barsabove=True, zorder=3)
+    # ax.plot(temperature_ints_shifted, zeros, c='black', linewidth=0.8)
+    # ax.scatter(temperatures, residuals, c=color, marker='.', label='{} residual'.format(separation))
+    # ax.errorbar(temperatures, residuals, residual_std, ls='none', color=ecolor, barsabove=True, zorder=3)
     # ax.errorbar(temperatures, residuals, midpoint_errors, ls='none', color=ecolor, barsabove=True, zorder=3)
 
     return residuals, residual_std
 ### Fix the parameters going in when calling this function
 
-def residual_percentages(ax, temperatures, fit_parameters, midpoints, residual_std, color, ecolor, separation):
+def residual_percentages(ax, temperatures, fit_parameters, midpoints, color, ecolor, separation):
     y_expected_vals = []
 
     for temp in temperatures:
@@ -140,9 +139,12 @@ def residual_percentages(ax, temperatures, fit_parameters, midpoints, residual_s
     midpoints = np.array(midpoints)
     residual_ratios = np.divide(residuals, midpoints)
     residual_percentages = 100*residual_ratios
+    residual_percentages = np.array(residual_percentages)
+
+    residual_std = np.std(residual_percentages, ddof=2)
 
     ax.plot(temperature_ints_shifted, zeros, c='black', linewidth=0.8)
-    ax.scatter(temperatures, residual_percentages, c=color, marker='.', label='{} residual'.format(separation))
+    ax.scatter(temperatures, residual_percentages, c=color, marker='.')
     ax.errorbar(temperatures, residual_percentages, residual_std, ls='none', color=ecolor, barsabove=True, zorder=3)
 
 #==========================================================================================================

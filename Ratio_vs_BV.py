@@ -27,7 +27,7 @@ date_list_before_38mm = ['20181204']
 date_list_after_38mm = ['20190411']
 
 separations = ['27', '38']
-temperature = np.array([172])
+temperature = np.array([168])
 temperature_shifted = temperature-169
 
 bias_voltages = ['47V', '48V', '49V', '50V', '51V', '52V']
@@ -67,6 +67,8 @@ for voltage in bias_voltages:
     
     df_after_27mm = compile_data(alphas_filename, date_list_after_27mm)
     df_after_27mm = create_df(df_after_27mm, separations[0], voltage)
+    if voltage ==  '48V':
+        df_after_27mm = df_after_27mm.iloc[1:]
 
     df_before_38mm = compile_data(alphas_filename, date_list_before_38mm)
     df_before_38mm = create_df(df_before_38mm, separations[1], voltage)
@@ -92,12 +94,27 @@ for voltage in bias_voltages:
     fit_parameters_before_38mm, cov_matrix_before_38mm = get_fit_parameters(temps_before_shifted_38mm, midpoints_before_38mm, temp_errors_before_38mm, midpoint_errors_before_38mm)
     fit_parameters_after_38mm, cov_matrix_after_38mm = get_fit_parameters(temps_after_shifted_38mm, midpoints_after_38mm, temp_errors_after_38mm, midpoint_errors_after_38mm)
 
+    # Find the residual standard deviation
+    residuals_before_27mm, residual_std_before_27mm = plot_residuals(ax, temps_before_shifted_27mm, fit_parameters_before_27mm[0], midpoints_before_27mm, midpoint_errors_before_27mm, line_color_27mm, error_color_27mm, 'Before baking')
+    residuals_after_27mm, residual_std_after_27mm = plot_residuals(ax, temps_after_shifted_27mm, fit_parameters_after_27mm[0], midpoints_after_27mm, midpoint_errors_after_27mm, line_color_27mm, error_color_27mm, 'After baking')
+
+    residuals_before_38mm, residual_std_before_38mm = plot_residuals(ax, temps_before_shifted_38mm, fit_parameters_before_38mm[0], midpoints_before_38mm, midpoint_errors_before_38mm, line_color_38mm, error_color_38mm, 'Before baking')
+    residuals_after_38mm, residual_std_after_38mm = plot_residuals(ax, temps_after_shifted_38mm, fit_parameters_after_38mm[0], midpoints_after_38mm, midpoint_errors_after_38mm, line_color_38mm, error_color_38mm, 'After baking')
+
     # Get the ratio point and the ratio error at the given temperature
-    ratio_yvalue_27mm, ratio_point_27mm, ratio_error_27mm = get_ratio_errors(fit_parameters_before_27mm, fit_parameters_after_27mm, cov_matrix_before_27mm, cov_matrix_after_27mm, temperature_shifted)
+    # ratio_yvalue_27mm, ratio_point_27mm, ratio_error_27mm = get_ratio_errors(fit_parameters_before_27mm, fit_parameters_after_27mm, cov_matrix_before_27mm, cov_matrix_after_27mm, temperature_shifted)
+    # ratio_list_27mm.append(ratio_yvalue_27mm)
+    # ratio_error_list_27mm.append(ratio_error_27mm)
+
+    # ratio_yvalue_38mm, ratio_point_38mm, ratio_error_38mm = get_ratio_errors(fit_parameters_before_38mm, fit_parameters_after_38mm, cov_matrix_before_38mm, cov_matrix_after_38mm, temperature_shifted)
+    # ratio_list_38mm.append(ratio_yvalue_38mm)
+    # ratio_error_list_38mm.append(ratio_error_38mm)
+
+    ratio_line_27mm, ratio_yvalue_27mm, ratio_error_27mm = get_ratios(fit_parameters_before_27mm, fit_parameters_after_27mm, residual_std_before_27mm, residual_std_after_27mm, temperature_ints_shifted)
     ratio_list_27mm.append(ratio_yvalue_27mm)
     ratio_error_list_27mm.append(ratio_error_27mm)
 
-    ratio_yvalue_38mm, ratio_point_38mm, ratio_error_38mm = get_ratio_errors(fit_parameters_before_38mm, fit_parameters_after_38mm, cov_matrix_before_38mm, cov_matrix_after_38mm, temperature_shifted)
+    ratio_line_38mm, ratio_yvalue_38mm, ratio_error_38mm = get_ratios(fit_parameters_before_38mm, fit_parameters_after_38mm, residual_std_before_38mm, residual_std_after_38mm, temperature_ints_shifted)
     ratio_list_38mm.append(ratio_yvalue_38mm)
     ratio_error_list_38mm.append(ratio_error_38mm)
 
@@ -108,6 +125,11 @@ ratio_error_list_27mm = np.array(ratio_error_list_27mm).T[0]
 
 ratio_list_38mm = np.array(ratio_list_38mm).T[0]
 ratio_error_list_38mm = np.array(ratio_error_list_38mm).T[0]
+
+average_ratio_27mm = np.mean(ratio_list_27mm)
+ratio_std_27mm = np.std(ratio_list_27mm, ddof=2)
+average_ratio_38mm = np.mean(ratio_list_38mm)
+ratio_std_38mm = np.std(ratio_list_38mm, ddof=2)
 
 #==========================================================================================================
 ### Plotting the Data ###
@@ -140,10 +162,16 @@ plt.suptitle('Ratio After Baking/Before Baking vs. Bias Voltage at {}K Temperatu
 
 # Setting the text strings
 txt_str_27mm = '\n'.join(['Dates taken at 27mm:', ' ', 'Before baking: {}'.format(date_before_27mm), 'After baking: {}'.format(date_after_27mm)])
-plt.figtext(0.8, 0.65, txt_str_27mm, fontsize=10)
+plt.figtext(0.8, 0.65, txt_str_27mm, color=error_color_27mm, fontsize=10)
 
 txt_str_38mm = '\n'.join(['Dates taken at 38mm:', ' ', 'Before baking: {}'.format(date_before_38mm), 'After baking: {}'.format(date_after_38mm)])
-plt.figtext(0.8, 0.45, txt_str_38mm, fontsize=10)
+plt.figtext(0.8, 0.5, txt_str_38mm, color=error_color_38mm, fontsize=10)
+
+txt_str_avg_27mm = '\n'.join(['Average ratio at 27mm:', '{:4f} +/- {:4f}'.format(average_ratio_27mm, ratio_std_27mm)])
+plt.figtext(0.8, 0.3, txt_str_avg_27mm, color=error_color_27mm, fontsize=10)
+
+txt_str_avg_38mm = '\n'.join(['Average ratio at 38mm:', '{:4f} +/- {:4f}'.format(average_ratio_38mm, ratio_std_38mm)])
+plt.figtext(0.8, 0.2, txt_str_avg_38mm, color=error_color_38mm, fontsize=10)
 
 plt.grid(True)
 ax.legend(bbox_to_anchor=(1.38, 1.0), frameon=False)

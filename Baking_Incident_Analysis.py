@@ -56,16 +56,19 @@ temperature_ints_shifted = temperature_ints-169
 df_before = compile_data(alphas_filename, date_list_before)
 df_before = create_df(df_before, separation[0], bias_voltage)
 
-# if bias_voltage == '50V':
-#     df_before = df_before[df_before['midpoint'] > 1.0]
+if bias_voltage == '50V':
+    df_before = df_before[df_before['midpoint'] > 1.0]
 
 df_after = compile_data(alphas_filename, date_list_after)
 df_after = create_df(df_after, separation[0], bias_voltage)
 
+if bias_voltage ==  '48V':
+    df_after = df_after.iloc[1:]
+
 # Preliminary variables for plotting
 fig, (ax_data, ax_sub) = plt.subplots(2, 1, sharex=False, figsize=(9, 6))
 ax_data.set_position((0.08, 0.4, 0.55, 0.5))
-ax_sub.set_position((0.11, 0.1, 0.57, 0.2))
+ax_sub.set_position((0.08, 0.1, 0.6, 0.2))
 axes = [ax_data, ax_sub]
 
 plot_suptitle = 'Midpoint vs. Temperature at {}mm Separation, {} Bias Voltage\n'.format(separation[0], bias_voltage)
@@ -82,8 +85,8 @@ residuals_after, residual_std_after = plot_residuals(ax_sub, temps_shifted_after
 residuals_before, residual_std_before = plot_residuals(ax_sub, temps_shifted_before, fit_parameters_before[0], midpoints_before, midpoint_errors_before, data_colors[date_list_before[0]], data_error_colors[date_list_before[0]], 'Before baking')
 print(residual_std_after)
 print(residual_std_before)
-# residual_percentages(ax_sub, temps_shifted_after, fit_parameters_after[0], midpoints_after, residual_std_after, data_colors[date_list_after[0]], data_error_colors[date_list_after[0]], 'After baking')
-# residual_percentages(ax_sub, temps_shifted_before, fit_parameters_before[0], midpoints_before, residual_std_before, data_colors[date_list_before[0]], data_error_colors[date_list_before[0]], 'Before baking')
+residual_percentages(ax_sub, temps_shifted_after, fit_parameters_after[0], midpoints_after, data_colors[date_list_after[0]], data_error_colors[date_list_after[0]], 'After baking')
+residual_percentages(ax_sub, temps_shifted_before, fit_parameters_before[0], midpoints_before, data_colors[date_list_before[0]], data_error_colors[date_list_before[0]], 'Before baking')
 
 # Setting the positions of the text on the figure
 if not plot_ratios:
@@ -110,8 +113,8 @@ if plot_ratios:
 
     # Setting the positions of the text on the figure
     plt.figtext(0.78, 0.55, txt_str_after, color=data_colors[date_list_after[0]], fontsize=10)
-    plt.figtext(0.78, 0.38, txt_str_before, color=data_colors[date_list_before[0]], fontsize=10)
-    plt.figtext(0.78, 0.3, 'Average Ratio = {:.4f}'.format(average_ratio), color=ratio_color, fontsize=10)
+    plt.figtext(0.78, 0.4, txt_str_before, color=data_colors[date_list_before[0]], fontsize=10)
+    plt.figtext(0.78, 0.3, '\n'.join(['Average Ratio:', '{:.2f} +/- {:.2f}'.format(average_ratio, ratio_errors[0]),]), color=ratio_color, fontsize=10)
 
 before = (fit_parameters_before[0][0])*(-0.5) + fit_parameters_before[0][1]
 after = (fit_parameters_after[0][0])*(-0.5) + fit_parameters_after[0][1]
@@ -122,12 +125,13 @@ after = (fit_parameters_after[0][0])*(-0.5) + fit_parameters_after[0][1]
 
 # Setting the y range
 ax_data.set_ylim(*y_range_data)
+ax_sub.set_ylim(-1.2, 1.2)
 
 # Setting the axis labels
 ax_data.set_xlabel('Temperature [K]', fontsize=14)
-ax_data.set_ylabel('Midpoint [V]', fontsize=14)
+ax_data.set_ylabel('SiPM Output [V]', fontsize=14)
 ax_sub.set_xlabel('Temperature [K]', fontsize=14)
-ax_sub.set_ylabel('Residuals [V]', fontsize=14)
+ax_sub.set_ylabel('Residuals [%]', fontsize=14)
 
 # Label the x-ticks with the actual temperature values (166-172)
 for ax in axes:
@@ -145,6 +149,6 @@ if plot_ratios:
     ax_ratio.legend(bbox_to_anchor=(1.56, 0.75), frameon=False)
     ax_ratio.grid(False)
 
-ax_data.legend(bbox_to_anchor=(1.47, 1.05), frameon=False)
-ax_sub.legend(bbox_to_anchor=(1.52, 0.7), frameon=False)
+ax_data.legend(bbox_to_anchor=(1.4, 1.05), frameon=False)
+# ax_sub.legend(bbox_to_anchor=(1.52, 0.7), frameon=False)
 plt.show()
