@@ -27,10 +27,10 @@ from Functions import *
 ### Variables ###
 
 ## Change these variables to specify the desired conditions for the plot
-dates = ['20190424', '20190516']    # List all of the dates to be included
-separations = ['27', '38']                # List all of the separations to be included
+dates = ['20190516']                # List all of the dates to be included
+separations = ['27']                # List all of the separations to be included
 bias_voltages = ['50V']             # List the bias voltages to be included
-num_sets = 2                        # How many data sets should be plotted?
+num_sets = 1                        # How many data sets should be plotted?
 
 ## These variables set the labels for the plot legends. Change these to indicate what should be written on the labels.
 set_1 = '27mm'
@@ -126,6 +126,10 @@ if __name__ == '__main__':
 
         # Create the data frame containing all of the data to be plotted
         dataframe = create_df(df_all_data, dates, separations[0], bias_voltages[0])
+
+        # Exclude the outlier found on 02/07/2019
+        if dates[0] == '20190207':
+            dataframe = dataframe[dataframe['midpoint'] > 1.0]
 
         # Deletes the data point that's been mislabeled as 50V
 
