@@ -22,7 +22,7 @@ sns.set()
 
 # Uses pandas to compile all of the data found in alphas.h5 into a data frame.
 # This makes it easier to work with and identify parts we want to analyze.
-def compile_data(filename, dates):
+def compile_data(filename):
     with pd.HDFStore(filename, 'r') as hdf:
         i = 0
         for key in hdf.keys():
@@ -34,17 +34,18 @@ def compile_data(filename, dates):
     
     df_cols = whole_df[['date', 'separation', 'biasV', 'midpoint', 'midpt_error', 'sigma', 'sigma_error', 
     'temperature_avg', 'temperature_rms']]
-    df_all_dates = df_cols[df_cols['date'].isin(dates)]
+    # df_all_dates = df_cols[df_cols['date'].isin(dates)]
 
-    return df_all_dates
+    return df_cols
 
 # Creates the data frame only containing the data with the specified conditions. 
 # These conditions include date taken, separation, and bias voltage.
-def create_df(df, separation, voltage):
-    sep = df['separation'] == separation
-    bv = df['biasV'] == voltage
-    df = df.loc[sep & bv]
-    return df
+def create_df(df, dates, separation, voltage):
+    df_dates = df[df['date'].isin(dates)]
+    sep = df_dates['separation'] == separation
+    bv = df_dates['biasV'] == voltage
+    dataframe = df_dates.loc[sep & bv]
+    return dataframe
 
 # Linear function (this is the model function for the best fit line).
 def linear_func(p, x):
@@ -80,7 +81,7 @@ def calc_red_chisquare_1d(opt_parameters, x_vals, y_vals, y_errors):
 
 # Calculate the reduced chi-squared value in two dimensions (uses x and y-errors)
 def calc_red_chisquare_2d(opt_parameters, x_vals, y_vals, x_errors, y_errors):
-    y_expected = linear_func(opt_parameters, x_vals)
+    # y_expected = linear_func(opt_parameters, x_vals)
 
     num_parameters = 2
     degrees_of_freedom = len(y_vals)-num_parameters
@@ -102,7 +103,7 @@ def define_xy_values(df, x_column, y_column, x_error_column, y_error_column):
     return x, y, x_error, y_error
 
 # Find the errors on the ratio by propagating the errors on the best fit lines
-def get_ratio_errors(fit_parameters_1, fit_parameters_2, cov_matrix_1, cov_matrix_2, temperatures):
+def calc_ratio_errors(fit_parameters_1, fit_parameters_2, cov_matrix_1, cov_matrix_2, temperatures):
 
     # Variables representing the slope, intercept, and the errors on the slope and intercept
     optimized_parameters_1 = fit_parameters_1[0]
@@ -148,7 +149,7 @@ def get_ratio_errors(fit_parameters_1, fit_parameters_2, cov_matrix_1, cov_matri
 
     return ratio_yvals, ratio_line, ratio_errors
 
-def get_ratios(fit_parameters_1, fit_parameters_2, residual_std_1, residual_std_2, temperatures):
+def calc_const_ratios(fit_parameters_1, fit_parameters_2, residual_std_1, residual_std_2, temperatures):
 
     # Variables representing the slope and intercept 
     optimized_parameters_1 = fit_parameters_1[0]
@@ -182,13 +183,14 @@ def get_ratios(fit_parameters_1, fit_parameters_2, residual_std_1, residual_std_
 
     return ratio_line, ratio_yvals, ratio_errors
 
-def get_residual_percentages(ax, temperatures, temperature_ints, fit_parameters, midpoints, midpoint_errors, color, ecolor, separation):
+def get_residual_percentages(ax, temperatures, temperature_ints, fit_parameters, midpoints, midpoint_errors, color, ecolor):
     y_expected_vals = []
 
     for temp in temperatures:
         y_expected = linear_func(fit_parameters, temp)
+        print(y_expected)
         y_expected_vals.append(y_expected)
-    
+    print(y_expected_vals)
     zeros = [0]*len(temperature_ints)
 
     residuals = midpoints - y_expected_vals
@@ -201,7 +203,7 @@ def get_residual_percentages(ax, temperatures, temperature_ints, fit_parameters,
     residual_std = np.std(residual_percentages, ddof=2)
 
     ax.plot(temperature_ints, zeros, c='black', linewidth=0.8)
-    ax.scatter(temperatures, residual_percentages, c=color, marker='.', label='{} residual'.format(separation))
+    ax.scatter(temperatures, residual_percentages, c=color, marker='.')
     ax.errorbar(temperatures, residual_percentages, residual_std, ls='none', color=ecolor, barsabove=True, zorder=3)
 
 #==========================================================================================================
