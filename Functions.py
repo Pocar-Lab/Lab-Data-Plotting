@@ -188,9 +188,8 @@ def get_residual_percentages(ax, temperatures, temperature_ints, fit_parameters,
 
     for temp in temperatures:
         y_expected = linear_func(fit_parameters, temp)
-        print(y_expected)
         y_expected_vals.append(y_expected)
-    print(y_expected_vals)
+
     zeros = [0]*len(temperature_ints)
 
     residuals = midpoints - y_expected_vals
