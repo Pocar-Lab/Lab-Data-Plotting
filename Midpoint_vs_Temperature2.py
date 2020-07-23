@@ -27,13 +27,14 @@ from Functions import *
 ### Variables ###
 
 ## Change these variables to specify the desired conditions for the plot
-dates = ['20190424', '20190516']
-separations = ['27']
-bias_voltages = ['50V']
-num_sets = 1
+dates = ['20190424', '20190516']    # List all of the dates to be included
+separations = ['27', '38']                # List all of the separations to be included
+bias_voltages = ['50V']             # List the bias voltages to be included
+num_sets = 2                        # How many data sets should be plotted?
 
+## These variables set the labels for the plot legends. Change these to indicate what should be written on the labels.
 set_1 = '27mm'
-# set_2 = '38mm'
+set_2 = '38mm'
 # set_3 = '31mm'
 
 plot_ratios = False
@@ -47,7 +48,7 @@ data_colors = {
     'set_3': '#FF7D00',
 }
 
-data_error_colors = {
+data_ecolors = {
     'set_1': '#B40F4C',
     'set_2': '#7800BF',
     'set_3': '#CB4B00',
@@ -82,7 +83,7 @@ def set_text_str(slope_label, intercept_label, slope, intercept, slope_error, in
     return txt_str
 
 # Plot the raw data
-def plot_data(ax, slope_label, intercept_label, df, separation, voltage, color, ecolor, label):
+def plot_data(ax, slope_label, intercept_label, df, color, ecolor, label):
 
     temps, midpoints, temp_errors, midpoint_errors = define_xy_values(df, 'temperature_avg', 'midpoint', 'temperature_rms', 'midpt_error')
     temps_shifted = temps-169
@@ -129,10 +130,10 @@ if __name__ == '__main__':
         # Deletes the data point that's been mislabeled as 50V
 
         # Plot the raw data and the best fit line
-        fit_pars, temps_shifted, midpoints, midpoint_errors, cov_matrix, txt_str = plot_data(ax_data, 'a', 'b', dataframe, separations[0], bias_voltages[0], data_colors['set_1'], data_error_colors['set_1'], label=set_1)
-        print(midpoints)
+        fit_pars, temps_shifted, midpoints, midpoint_errors, cov_matrix, txt_str = plot_data(ax_data, 'a', 'b', dataframe, data_colors['set_1'], data_ecolors['set_1'], label=set_1)
+        
         # Plot the residuals on a subplot below the main plot
-        get_residual_percentages(ax_sub, temps_shifted, temp_ints_shifted, fit_pars[0], midpoints, midpoint_errors, data_colors['set_1'], data_error_colors['set_1'])
+        get_residual_percentages(ax_sub, temps_shifted, temp_ints_shifted, fit_pars[0], midpoints, midpoint_errors, data_colors['set_1'], data_ecolors['set_1'])
 
         # Setting the super title and the title variables
         plot_suptitle = 'Midpoint vs. Temperature at {}mm Separation, {} Bias Voltage\n'.format(separations[0], bias_voltages[0])
@@ -141,6 +142,30 @@ if __name__ == '__main__':
         # Creating the text box
         plt.figtext(0.75, 0.5, txt_str, color=data_colors['set_1'], fontsize=10)
     
+    if num_sets == 2:
+
+        # Creates two separate data frames each containing one set of data to be plotted
+        df_1 = create_df(df_all_data, dates, separations[0], bias_voltages[0])
+        df_2 = create_df(df_all_data, dates, separations[1], bias_voltages[0])
+
+        # Setting the super title and the title variables
+        plot_suptitle = 'Midpoint vs. Temperature at {} Bias Voltage\n'.format(bias_voltages[0])
+        dates_1 = ', '.join(df_1.date.unique())
+        dates_2 = ', '.join(df_2.date.unique())
+        plot_title = 'Dates Taken: ' + dates_1 + ' ' + dates_2
+
+        # Plot the raw data and the best fit line
+        fit_pars_1, temps_shifted_1, midpt_1, midpt_err_1, cov_matrix_1, txt_str_1 = plot_data(ax_data, 'a', 'b', df_1, data_colors['set_1'], data_ecolors['set_1'], label=set_1)
+        fit_pars_2, temps_shifted_2, midpt_2, midpt_err_2, cov_matrix_2, txt_str_2 = plot_data(ax_data, 'c', 'd', df_2, data_colors['set_2'], data_ecolors['set_2'], label=set_2)
+
+        # Plot the residuals on a subplot below the main plot
+        get_residual_percentages(ax_sub, temps_shifted_1, temp_ints_shifted, fit_pars_1[0], midpt_1, midpt_err_1, data_colors['set_1'], data_ecolors['set_1'])
+        get_residual_percentages(ax_sub, temps_shifted_2, temp_ints_shifted, fit_pars_2[0], midpt_2, midpt_err_2, data_colors['set_2'], data_ecolors['set_2']) 
+
+        # Creating the text boxes
+        plt.figtext(0.75, 0.55, txt_str_1, color=data_colors['set_1'], fontsize=10)
+        plt.figtext(0.75, 0.35, txt_str_2, color=data_colors['set_2'], fontsize=10)
+
     #==========================================================================================================
 
     ### Plot Settings ###
