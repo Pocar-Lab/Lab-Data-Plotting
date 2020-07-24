@@ -27,10 +27,11 @@ from Functions import *
 ### Variables ###
 
 ## Change these variables to specify the desired conditions for the plot
-dates = ['20190516']                # List all of the dates to be included
+dates_set_1 = ['20190207']
+dates_set_2 = ['20190516']                # List all of the dates to be included
 separations = ['27']                # List all of the separations to be included
 bias_voltages = ['50V']             # List the bias voltages to be included
-num_sets = 1                        # How many data sets should be plotted?
+num_sets = 2                        # How many data sets should be plotted?
 
 ## These variables set the labels for the plot legends. Change these to indicate what should be written on the labels.
 set_1 = '27mm'
@@ -148,15 +149,25 @@ if __name__ == '__main__':
     
     if num_sets == 2:
 
-        # Creates two separate data frames each containing one set of data to be plotted
-        df_1 = create_df(df_all_data, dates, separations[0], bias_voltages[0])
-        df_2 = create_df(df_all_data, dates, separations[1], bias_voltages[0])
+        if len(separations) == 2:
+            # Creates two separate data frames each containing one set of data to be plotted
+            df_1 = create_df(df_all_data, dates, separations[0], bias_voltages[0])
+            df_2 = create_df(df_all_data, dates, separations[1], bias_voltages[0])
 
-        # Setting the super title and the title variables
-        plot_suptitle = 'Midpoint vs. Temperature at {} Bias Voltage\n'.format(bias_voltages[0])
-        dates_1 = ', '.join(df_1.date.unique())
-        dates_2 = ', '.join(df_2.date.unique())
-        plot_title = 'Dates Taken: ' + dates_1 + ' ' + dates_2
+            # Setting the super title and the title variables
+            plot_suptitle = 'Midpoint vs. Temperature at {} Bias Voltage\n'.format(bias_voltages[0])
+            dates_1 = ', '.join(df_1.date.unique())
+            dates_2 = ', '.join(df_2.date.unique())
+            plot_title = 'Dates Taken: 27mm: ' + dates_1 + '    ' + '38mm: ' + dates_2
+        
+        if len(separations) == 1:
+            # Creates two separate data frames each containing one set of data to be plotted
+            df_1 = create_df(df_all_data, dates_set_1, separations[0], bias_voltages[0])
+            df_2 = create_df(df_all_data, dates_set_2, separations[0], bias_voltages[0])
+
+            # Setting the super title and the title variables
+            plot_suptitle = 'Midpoint vs. Temperature at {}mm Separation, {} Bias Voltage\n'.format(separations[0], bias_voltages[0])
+            plot_title = ''
 
         # Plot the raw data and the best fit line
         fit_pars_1, temps_shifted_1, midpt_1, midpt_err_1, cov_matrix_1, txt_str_1 = plot_data(ax_data, 'a', 'b', df_1, data_colors['set_1'], data_ecolors['set_1'], label=set_1)
