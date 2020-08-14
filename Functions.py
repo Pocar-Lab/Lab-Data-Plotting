@@ -181,7 +181,21 @@ def calc_const_ratios(fit_parameters_1, fit_parameters_2, residual_std_1, residu
     
     ratio_yvals = np.divide(expected_voltages_2, expected_voltages_1)
 
-    return ratio_line, ratio_yvals, ratio_errors
+    return ratio_yvals, ratio_line, ratio_errors
+
+def get_residuals(temperatures, fit_parameters, midpoints, midpoint_errors):
+    y_expected_list = []
+
+    for temp in temperatures:
+        y_expected = linear_func(fit_parameters, temp)
+        y_expected_list.append(y_expected)
+    
+    residuals  = midpoints - y_expected_list
+    residuals = np.array(residuals)
+    residual_std = np.std(residuals, ddof=2)
+
+    return residuals, residual_std
+
 
 def get_residual_percentages(ax, temperatures, temperature_ints, fit_parameters, midpoints, midpoint_errors, color, ecolor):
     y_expected_vals = []

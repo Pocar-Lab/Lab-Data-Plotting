@@ -27,20 +27,22 @@ from Functions import *
 ### Variables ###
 
 ## Change these variables to specify the desired conditions for the plot
-dates_set_1 = ['20190207']
-dates_set_2 = ['20190516']                # List all of the dates to be included
-separations = ['27']                # List all of the separations to be included
-bias_voltages = ['50V']             # List the bias voltages to be included
+dates_set_1 = ['20181204']
+dates_set_2 = ['20190207']                # List all of the dates to be included
+separations = ['38', '27']                # List all of the separations to be included
+bias_voltages = ['49V']             # List the bias voltages to be included
 num_sets = 2                        # How many data sets should be plotted?
 
+plot_suptitle = 'Midpoint vs. Temperature at {} Bias Voltage, Before Baking Incident'.format(bias_voltages[0])
+
 ## These variables set the labels for the plot legends. Change these to indicate what should be written on the labels.
-set_1 = '27mm'
-set_2 = '38mm'
+set_1 = '38mm'
+set_2 = '27mm'
 # set_3 = '31mm'
 
-plot_ratios = False
-y_range_data = (0.0, 1.8)
-y_range_ratio = (0.1, 1.0)
+plot_ratios = True
+y_range_data = (0, 1.0)
+y_range_ratio = (1.0, 2.0)
 
 ## Color variables
 data_colors = {
@@ -110,7 +112,7 @@ def plot_data(ax, slope_label, intercept_label, df, color, ecolor, label):
 
 if __name__ == '__main__':
 
-    separations = sorted(separations)
+    # separations = sorted(separations)
 
     # Define preliminary variables for plotting
     fig, (ax_data, ax_sub) = plt.subplots(2, 1, sharex=False, figsize=(10, 7))
@@ -126,11 +128,9 @@ if __name__ == '__main__':
     if num_sets == 1:
 
         # Create the data frame containing all of the data to be plotted
-        dataframe = create_df(df_all_data, dates, separations[0], bias_voltages[0])
+        dataframe = create_df(df_all_data, dates_set_1, separations[0], bias_voltages[0])
 
         # Exclude the outlier found on 02/07/2019
-        if dates[0] == '20190207':
-            dataframe = dataframe[dataframe['midpoint'] > 1.0]
 
         # Deletes the data point that's been mislabeled as 50V
 
@@ -151,22 +151,20 @@ if __name__ == '__main__':
 
         if len(separations) == 2:
             # Creates two separate data frames each containing one set of data to be plotted
-            df_1 = create_df(df_all_data, dates, separations[0], bias_voltages[0])
-            df_2 = create_df(df_all_data, dates, separations[1], bias_voltages[0])
+            df_1 = create_df(df_all_data, dates_set_1, separations[0], bias_voltages[0])
+            df_2 = create_df(df_all_data, dates_set_2, separations[1], bias_voltages[0])
 
             # Setting the super title and the title variables
-            plot_suptitle = 'Midpoint vs. Temperature at {} Bias Voltage\n'.format(bias_voltages[0])
+            # plot_suptitle = 'Midpoint vs. Temperature at {} Bias Voltage\n'.format(bias_voltages[0])
             dates_1 = ', '.join(df_1.date.unique())
             dates_2 = ', '.join(df_2.date.unique())
-            plot_title = 'Dates Taken: 27mm: ' + dates_1 + '    ' + '38mm: ' + dates_2
+            plot_title = 'Dates Taken: 38mm: ' + dates_1 + '    ' + '27mm: ' + dates_2
         
         if len(separations) == 1:
             # Creates two separate data frames each containing one set of data to be plotted
             df_1 = create_df(df_all_data, dates_set_1, separations[0], bias_voltages[0])
             df_2 = create_df(df_all_data, dates_set_2, separations[0], bias_voltages[0])
 
-            # Setting the super title and the title variables
-            plot_suptitle = 'Midpoint vs. Temperature at {}mm Separation, {} Bias Voltage\n'.format(separations[0], bias_voltages[0])
             plot_title = ''
 
         # Plot the raw data and the best fit line
@@ -177,9 +175,40 @@ if __name__ == '__main__':
         get_residual_percentages(ax_sub, temps_shifted_1, temp_ints_shifted, fit_pars_1[0], midpt_1, midpt_err_1, data_colors['set_1'], data_ecolors['set_1'])
         get_residual_percentages(ax_sub, temps_shifted_2, temp_ints_shifted, fit_pars_2[0], midpt_2, midpt_err_2, data_colors['set_2'], data_ecolors['set_2']) 
 
-        # Creating the text boxes
-        plt.figtext(0.75, 0.55, txt_str_1, color=data_colors['set_1'], fontsize=10)
-        plt.figtext(0.75, 0.35, txt_str_2, color=data_colors['set_2'], fontsize=10)
+        residuals_1, res_std_1 = get_residuals(temps_shifted_1, fit_pars_1[0], midpt_1, midpt_err_1)
+        residuals_2, res_std_2 = get_residuals(temps_shifted_2, fit_pars_2[0], midpt_2, midpt_err_2)
+        print(res_std_1)
+        print(res_std_2)
+
+        # Find and plot the ratios between the two data sets
+        if plot_ratios:
+
+            ax_ratio = ax_data.twinx()
+            ax_ratio.set_position((0.08, 0.4, 0.6, 0.5))
+            ax_ratio.tick_params(axis='y', colors=ratio_colors['ratio_1'])
+            axes = [ax_data, ax_sub, ax_ratio]
+
+            ratio_label = set_2 + '/' + set_1
+
+            # Find and plot the ratios and the ratio errors
+            ratio_yvals, ratio_line, ratio_errors = calc_const_ratios(fit_pars_1, fit_pars_2, res_std_1, res_std_2, temp_ints_shifted)
+            ax_ratio.plot(temp_ints_shifted, ratio_line, c=ratio_colors['ratio_1'], label=ratio_label)
+            ax_ratio.errorbar(temp_ints_shifted, ratio_yvals, ratio_errors, ls='none', color=ratio_error_colors['ratio_1'], barsabove=True, zorder=3)
+            ax_ratio.fill_between(temp_ints_shifted, ratio_yvals-ratio_errors, ratio_yvals+ratio_errors, color=ratio_colors['ratio_1'], alpha=0.2)
+
+            # Get the average ratio
+            ratio_yvals = np.array(ratio_yvals)
+            average_ratio = np.mean(ratio_yvals)
+
+            # Creating the text boxes
+            plt.figtext(0.78, 0.55, txt_str_1, color=data_colors['set_1'], fontsize=10)
+            plt.figtext(0.78, 0.4, txt_str_2, color=data_colors['set_2'], fontsize=10)
+            plt.figtext(0.78, 0.3, '\n'.join(['Average Ratio:', '{:.2f} +/- {:.2f}'.format(average_ratio, ratio_errors[0]),]), color=ratio_colors['ratio_1'], fontsize=10)      # The error on the average ratio is just the value of the first item in the ratio errors list because the ratio errors are the same at every point.
+
+        if not plot_ratios:
+            # Creating the text boxes
+            plt.figtext(0.75, 0.55, txt_str_1, color=data_colors['set_1'], fontsize=10)
+            plt.figtext(0.75, 0.35, txt_str_2, color=data_colors['set_2'], fontsize=10)
 
     #==========================================================================================================
 
@@ -204,11 +233,11 @@ if __name__ == '__main__':
     plt.suptitle('\n'.join([plot_suptitle, plot_title]), fontsize=12)
 
     # Settings for the ratio plot
-    # if plot_ratios:
-    #     ax_ratio.set_ylim(y_range_ratio)
-    #     ax_ratio.set_ylabel('Ratio', fontsize=14)
-    #     ax_ratio.legend(bbox_to_anchor=(1.55, 1.0))
-    #     ax_ratio.grid(False)
+    if plot_ratios:
+        ax_ratio.set_ylim(y_range_ratio)
+        ax_ratio.set_ylabel('Ratio', color=ratio_colors['ratio_1'], fontsize=14)
+        ax_ratio.legend(bbox_to_anchor=(1.48, 0.75), frameon=False)
+        ax_ratio.grid(False)
     
-    ax_data.legend(bbox_to_anchor=(1.3, 1.0), frameon=False)
+    ax_data.legend(bbox_to_anchor=(1.4, 1.05), frameon=False)
     plt.show()
