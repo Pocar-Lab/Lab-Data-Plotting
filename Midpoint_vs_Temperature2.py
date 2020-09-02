@@ -27,13 +27,13 @@ from Functions import *
 ### Variables ###
 
 ## Change these variables to specify the desired conditions for the plot
-dates_set_1 = ['20181204']
-dates_set_2 = ['20190207']                # List all of the dates to be included
+dates_set_1 = ['20190411']
+dates_set_2 = ['20190516']                # List all of the dates to be included
 separations = ['38', '27']                # List all of the separations to be included
 bias_voltages = ['49V']             # List the bias voltages to be included
 num_sets = 2                        # How many data sets should be plotted?
 
-plot_suptitle = 'Midpoint vs. Temperature at {} Bias Voltage, Before Baking Incident'.format(bias_voltages[0])
+plot_suptitle = 'Midpoint vs. Temperature at {} Bias Voltage, After Baking Incident'.format(bias_voltages[0])
 
 ## These variables set the labels for the plot legends. Change these to indicate what should be written on the labels.
 set_1 = '38mm'
@@ -41,8 +41,8 @@ set_2 = '27mm'
 # set_3 = '31mm'
 
 plot_ratios = True
-y_range_data = (0, 1.0)
-y_range_ratio = (1.0, 2.0)
+y_range_data = (0.2, 1.2)
+y_range_ratio = (1.4, 2.4)
 
 ## Color variables
 data_colors = {
